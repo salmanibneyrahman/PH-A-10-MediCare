@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardBody, Button, Chip, Avatar } from "@heroui/react";
+import { Card, Button, Chip, Avatar } from "@heroui/react";
 import StarRating from "./StarRating";
 
 export default function DoctorCard({ doctor }) {
@@ -20,7 +20,7 @@ export default function DoctorCard({ doctor }) {
 
     return (
         <Card className="glass-card border border-white/10 hover:border-cyan-500/30 transition-all duration-300 hover-lift overflow-hidden group">
-            <CardBody className="p-0">
+            <Card.Content className="p-0">
                 {/* Top gradient bar */}
                 <div className="h-1 w-full bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-500" />
 
@@ -158,7 +158,7 @@ export default function DoctorCard({ doctor }) {
                         View Profile & Book
                     </Button>
                 </div>
-            </CardBody>
+            </Card.Content>
         </Card>
     );
 }

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Button } from "@heroui/react";
 import SectionHeading from "@/components/SectionHeading";
 
 export const metadata = { title: "About Us" };
@@ -289,21 +288,18 @@ export default function AboutPage() {
                 expand your practice, MediCare Connect is here for you.
               </p>
               <div className="flex gap-3 flex-wrap justify-center">
-                <Button
-                  as={Link}
+                <Link
                   href="/register"
-                  className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold px-8 shadow-xl shadow-cyan-500/20"
+                  className="inline-flex items-center px-8 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold shadow-xl shadow-cyan-500/20 hover:opacity-90 transition-opacity"
                 >
                   Get Started
-                </Button>
-                <Button
-                  as={Link}
+                </Link>
+                <Link
                   href="/contact"
-                  variant="bordered"
-                  className="border-white/20 text-slate-300 hover:border-cyan-500/50 hover:text-cyan-400 font-semibold px-8"
+                  className="inline-flex items-center px-8 py-3 rounded-xl border border-white/20 text-slate-300 hover:border-cyan-500/50 hover:text-cyan-400 font-semibold transition-all"
                 >
                   Contact Us
-                </Button>
+                </Link>
               </div>
             </div>
           </div>

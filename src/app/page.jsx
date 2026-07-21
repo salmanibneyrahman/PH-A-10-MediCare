@@ -742,7 +742,7 @@ export default function HomePage() {
                 }}
               >
                 <Card className="glass-card border border-white/5 hover:border-white/20 transition-all duration-300 hover-lift cursor-pointer group overflow-hidden">
-                  <Card.Body className="p-5 flex flex-col items-center gap-3 text-center">
+                  <Card.Content className="p-5 flex flex-col items-center gap-3 text-center">
                     <div
                       className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${spec.color} flex items-center justify-center shadow-lg ${spec.glow} group-hover:scale-110 transition-transform duration-300`}
                     >
@@ -769,7 +769,7 @@ export default function HomePage() {
                       </p>
                     </div>
                     <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
-                  </Card.Body>
+                  </Card.Content>
                 </Card>
               </Link>
             ))}
@@ -807,7 +807,7 @@ export default function HomePage() {
                 }}
               >
                 <Card className="glass-card border border-white/5 hover:border-white/15 transition-all duration-300 hover-lift h-full">
-                  <Card.Body className="p-6 flex flex-col gap-4">
+                  <Card.Content className="p-6 flex flex-col gap-4">
                     <div
                       className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center shadow-lg`}
                     >
@@ -833,7 +833,7 @@ export default function HomePage() {
                         {item.description}
                       </p>
                     </div>
-                  </Card.Body>
+                  </Card.Content>
                 </Card>
               </div>
             ))}
@@ -881,7 +881,7 @@ export default function HomePage() {
                   }}
                 >
                   <Card className="glass-card border border-white/5 hover:border-cyan-500/20 transition-all duration-300 hover-lift h-full">
-                    <Card.Body className="p-6 flex flex-col gap-4">
+                    <Card.Content className="p-6 flex flex-col gap-4">
                       {/* Quote Icon */}
                       <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
                         <svg
@@ -929,7 +929,7 @@ export default function HomePage() {
                           Verified
                         </Chip>
                       </div>
-                    </Card.Body>
+                    </Card.Content>
                   </Card>
                 </div>
               ))}

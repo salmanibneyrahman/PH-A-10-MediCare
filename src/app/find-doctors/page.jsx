@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Input,
   Select,
-  SelectItem,
+  ListBox,
   Button,
   Chip,
   Pagination,
@@ -14,8 +14,6 @@ import DoctorCard from "@/components/DoctorCard";
 import SectionHeading from "@/components/SectionHeading";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useSearchParams, useRouter } from "next/navigation";
-
-export const metadata = { title: "Find Doctors" };
 
 const specializations = [
   "All",
@@ -172,7 +170,6 @@ export default function FindDoctorsPage() {
 
             {/* Specialization Filter */}
             <Select
-              placeholder="Specialization"
               selectedKeys={specialization ? [specialization] : ["all"]}
               onSelectionChange={(keys) =>
                 handleSpecialization(Array.from(keys)[0] || "all")
@@ -181,23 +178,29 @@ export default function FindDoctorsPage() {
                 trigger:
                   "bg-white/5 border border-white/10 hover:border-cyan-500/40 data-[focus=true]:border-cyan-500 transition-all h-12",
                 value: "text-slate-200 text-sm",
-                listbox: "bg-[#0d1b2a]",
                 popoverContent: "bg-[#0d1b2a] border border-white/10",
               }}
             >
-              {specializations.map((spec) => (
-                <SelectItem
-                  key={spec.toLowerCase()}
-                  className="text-slate-300 hover:bg-white/5 data-[hover=true]:bg-white/5"
-                >
-                  {spec}
-                </SelectItem>
-              ))}
+              <Select.Trigger>
+                <Select.Value placeholder="Specialization" />
+                <Select.Indicator />
+              </Select.Trigger>
+              <Select.Popover>
+                <ListBox>
+                  {specializations.map((spec) => (
+                    <ListBox.Item
+                      key={spec.toLowerCase()}
+                      className="text-slate-300 hover:bg-white/5 data-[hover=true]:bg-white/5"
+                    >
+                      {spec}
+                    </ListBox.Item>
+                  ))}
+                </ListBox>
+              </Select.Popover>
             </Select>
 
             {/* Sort */}
             <Select
-              placeholder="Sort By"
               selectedKeys={sortBy ? [sortBy] : ["default"]}
               onSelectionChange={(keys) =>
                 handleSort(Array.from(keys)[0] || "default")
@@ -206,18 +209,25 @@ export default function FindDoctorsPage() {
                 trigger:
                   "bg-white/5 border border-white/10 hover:border-cyan-500/40 data-[focus=true]:border-cyan-500 transition-all h-12",
                 value: "text-slate-200 text-sm",
-                listbox: "bg-[#0d1b2a]",
                 popoverContent: "bg-[#0d1b2a] border border-white/10",
               }}
             >
-              {sortOptions.map((opt) => (
-                <SelectItem
-                  key={opt.key}
-                  className="text-slate-300 hover:bg-white/5 data-[hover=true]:bg-white/5"
-                >
-                  {opt.label}
-                </SelectItem>
-              ))}
+              <Select.Trigger>
+                <Select.Value placeholder="Sort By" />
+                <Select.Indicator />
+              </Select.Trigger>
+              <Select.Popover>
+                <ListBox>
+                  {sortOptions.map((opt) => (
+                    <ListBox.Item
+                      key={opt.key}
+                      className="text-slate-300 hover:bg-white/5 data-[hover=true]:bg-white/5"
+                    >
+                      {opt.label}
+                    </ListBox.Item>
+                  ))}
+                </ListBox>
+              </Select.Popover>
             </Select>
           </div>
 

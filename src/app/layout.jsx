@@ -1,6 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { HeroUIProvider } from "@heroui/react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Navbar from "@/components/Navbar";
@@ -32,31 +31,29 @@ export default function RootLayout({ children }) {
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0a0f1e] text-slate-200`}
             >
-                <HeroUIProvider>
-                    <AuthProvider>
-                        <Navbar />
-                        <main className="min-h-screen">{children}</main>
-                        <Footer />
-                        <ToastContainer
-                            position="top-right"
-                            autoClose={3000}
-                            hideProgressBar={false}
-                            newestOnTop
-                            closeOnClick
-                            rtl={false}
-                            pauseOnFocusLoss
-                            draggable
-                            pauseOnHover
-                            theme="dark"
-                            toastStyle={{
-                                background: "rgba(15, 23, 42, 0.95)",
-                                backdropFilter: "blur(16px)",
-                                border: "1px solid rgba(6, 182, 212, 0.2)",
-                                color: "#e2e8f0",
-                            }}
-                        />
-                    </AuthProvider>
-                </HeroUIProvider>
+                <AuthProvider>
+                    <Navbar />
+                    <main className="min-h-screen">{children}</main>
+                    <Footer />
+                    <ToastContainer
+                        position="top-right"
+                        autoClose={3000}
+                        hideProgressBar={false}
+                        newestOnTop
+                        closeOnClick
+                        rtl={false}
+                        pauseOnFocusLoss
+                        draggable
+                        pauseOnHover
+                        theme="dark"
+                        toastStyle={{
+                            background: "rgba(15, 23, 42, 0.95)",
+                            backdropFilter: "blur(16px)",
+                            border: "1px solid rgba(6, 182, 212, 0.2)",
+                            color: "#e2e8f0",
+                        }}
+                    />
+                </AuthProvider>
             </body>
         </html>
     );

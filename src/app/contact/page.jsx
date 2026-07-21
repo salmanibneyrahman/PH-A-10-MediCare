@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Input, Textarea, Button, Card, CardBody } from "@heroui/react";
+import { TextField, Label, Input, TextArea, Button, Card, FieldError } from "@heroui/react";
 import SectionHeading from "@/components/SectionHeading";
 import { toast } from "react-toastify";
 
@@ -94,7 +94,7 @@ export default function ContactPage() {
               key={info.label}
               className="glass-card border border-white/10 hover:border-white/20 transition-all hover-lift"
             >
-              <CardBody className="p-6 flex flex-col gap-3">
+              <Card.Content className="p-6 flex flex-col gap-3">
                 <div
                   className={`w-12 h-12 rounded-xl bg-gradient-to-br ${info.color} flex items-center justify-center shadow-lg`}
                 >
@@ -120,7 +120,7 @@ export default function ContactPage() {
                     {info.value}
                   </p>
                 </div>
-              </CardBody>
+              </Card.Content>
             </Card>
           ))}
         </div>
@@ -128,99 +128,85 @@ export default function ContactPage() {
         {/* Form & Emergency */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form */}
-          <div className="lg:col-span-2">
-            <Card className="glass-card border border-white/10">
-              <CardBody className="p-8">
-                <h2 className="text-white font-bold text-xl mb-6">
-                  Send Us a Message
-                </h2>
-                <form
-                  onSubmit={handleSubmit}
-                  className="flex flex-col gap-5"
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Input
-                      label="Full Name"
-                      placeholder="Your full name"
-                      value={formData.name}
-                      onValueChange={(v) => handleChange("name", v)}
-                      isInvalid={!!errors.name}
-                      errorMessage={errors.name}
-                      classNames={{
-                        inputWrapper:
-                          "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all data-[invalid=true]:border-red-500/60",
-                        input: "text-slate-200 placeholder:text-slate-500 text-sm",
-                        label: "text-slate-400 text-sm",
-                        errorMessage: "text-red-400 text-xs",
-                      }}
-                    />
-                    <Input
-                      type="email"
-                      label="Email Address"
-                      placeholder="your@email.com"
-                      value={formData.email}
-                      onValueChange={(v) => handleChange("email", v)}
-                      isInvalid={!!errors.email}
-                      errorMessage={errors.email}
-                      classNames={{
-                        inputWrapper:
-                          "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all data-[invalid=true]:border-red-500/60",
-                        input: "text-slate-200 placeholder:text-slate-500 text-sm",
-                        label: "text-slate-400 text-sm",
-                        errorMessage: "text-red-400 text-xs",
-                      }}
-                    />
-                  </div>
-                  <Input
-                    label="Subject"
-                    placeholder="How can we help?"
-                    value={formData.subject}
-                    onValueChange={(v) => handleChange("subject", v)}
-                    isInvalid={!!errors.subject}
-                    errorMessage={errors.subject}
-                    classNames={{
-                      inputWrapper:
-                        "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all data-[invalid=true]:border-red-500/60",
-                      input: "text-slate-200 placeholder:text-slate-500 text-sm",
-                      label: "text-slate-400 text-sm",
-                      errorMessage: "text-red-400 text-xs",
-                    }}
-                  />
-                  <Textarea
-                    label="Message"
-                    placeholder="Write your message here..."
-                    value={formData.message}
-                    onValueChange={(v) => handleChange("message", v)}
-                    isInvalid={!!errors.message}
-                    errorMessage={errors.message}
-                    minRows={5}
-                    classNames={{
-                      inputWrapper:
-                        "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all data-[invalid=true]:border-red-500/60",
-                      input: "text-slate-200 placeholder:text-slate-500 text-sm",
-                      label: "text-slate-400 text-sm",
-                      errorMessage: "text-red-400 text-xs",
-                    }}
-                  />
-                  <Button
-                    type="submit"
-                    isLoading={loading}
-                    className="w-full bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold h-12 shadow-xl shadow-cyan-500/20 hover:opacity-90 transition-opacity"
-                    size="lg"
-                  >
-                    {loading ? "Sending..." : "Send Message"}
-                  </Button>
-                </form>
-              </CardBody>
-            </Card>
-          </div>
+  <div className="lg:col-span-2">
+    <Card className="glass-card border border-white/10 p-8">
+      <h2 className="text-white font-bold text-xl mb-6">
+        Send Us a Message
+      </h2>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          
+          {/* Full Name */}
+          <TextField isInvalid={!!errors.name} className="w-full">
+            <Label className="text-slate-400 text-sm mb-1.5 block">Full Name</Label>
+            <Input
+              placeholder="Your full name"
+              value={formData.name}
+              onChange={(e) => handleChange("name", e.target.value)}
+              className="w-full h-10 px-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none"
+            />
+            {errors.name && <FieldError className="text-red-400 text-xs mt-1">{errors.name}</FieldError>}
+          </TextField>
+
+          {/* Email Address */}
+          <TextField isInvalid={!!errors.email} className="w-full">
+            <Label className="text-slate-400 text-sm mb-1.5 block">Email Address</Label>
+            <Input
+              type="email"
+              placeholder="your@email.com"
+              value={formData.email}
+              onChange={(e) => handleChange("email", e.target.value)}
+              className="w-full h-10 px-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none"
+            />
+            {errors.email && <FieldError className="text-red-400 text-xs mt-1">{errors.email}</FieldError>}
+          </TextField>
+
+        </div>
+
+        {/* Subject */}
+        <TextField isInvalid={!!errors.subject} className="w-full">
+          <Label className="text-slate-400 text-sm mb-1.5 block">Subject</Label>
+          <Input
+            placeholder="How can we help?"
+            value={formData.subject}
+            onChange={(e) => handleChange("subject", e.target.value)}
+            className="w-full h-10 px-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none"
+          />
+          {errors.subject && <FieldError className="text-red-400 text-xs mt-1">{errors.subject}</FieldError>}
+        </TextField>
+
+        {/* Message */}
+        <TextField isInvalid={!!errors.message} className="w-full">
+          <Label className="text-slate-400 text-sm mb-1.5 block">Message</Label>
+          <TextArea
+            placeholder="Write your message here..."
+            value={formData.message}
+            onChange={(e) => handleChange("message", e.target.value)}
+            rows={5} /* Swapped v2 minRows out for standard HTML rows */
+            className="w-full p-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none resize-none"
+          />
+          {errors.message && <FieldError className="text-red-400 text-xs mt-1">{errors.message}</FieldError>}
+        </TextField>
+
+        <Button
+          type="submit"
+          isLoading={loading}
+          className="w-full bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold h-12 shadow-xl shadow-cyan-500/20 hover:opacity-90 transition-opacity rounded-xl"
+          size="lg"
+        >
+          {loading ? "Sending..." : "Send Message"}
+        </Button>
+      </form>
+    </Card>
+  </div>
+);
 
           {/* Sidebar */}
           <div className="flex flex-col gap-6">
             {/* Emergency */}
             <Card className="glass-card border border-red-500/30 overflow-hidden">
               <div className="h-1 w-full bg-gradient-to-r from-red-500 to-rose-600" />
-              <CardBody className="p-6 flex flex-col gap-4">
+              <Card.Content className="p-6 flex flex-col gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl bg-red-500/15 flex items-center justify-center">
                     <svg
@@ -258,12 +244,12 @@ export default function ContactPage() {
                     +1 (800) 911-0000
                   </p>
                 </div>
-              </CardBody>
+              </Card.Content>
             </Card>
 
             {/* FAQ */}
             <Card className="glass-card border border-white/10">
-              <CardBody className="p-6 flex flex-col gap-4">
+              <Card.Content className="p-6 flex flex-col gap-4">
                 <h3 className="text-white font-bold">Quick Answers</h3>
                 {[
                   {
@@ -291,7 +277,7 @@ export default function ContactPage() {
                     </p>
                   </div>
                 ))}
-              </CardBody>
+              </Card.Content>
             </Card>
           </div>
         </div>
