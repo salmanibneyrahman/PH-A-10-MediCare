@@ -1,21 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Card,
-  CardBody,
+  TextField,
+  Label,
   Input,
+  FieldError,
   Button,
-  Divider,
+  Separator,
 } from "@heroui/react";
 import { signIn } from "@/lib/authClient";
 import { toast } from "react-toastify";
 
-export const metadata = {
-  title: "Login",
-};
+// export const metadata = {
+//   title: "Login",
+// };
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,10 +37,22 @@ export default function LoginPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleChange = (field, value) => {
+  // Stable across renders (empty deps) — safe because both setters use the
+  // functional form, so no stale-closure risk. Clearing the error is now done
+  // inside the updater, which lets React bail out when nothing actually changed.
+  const handleChange = useCallback((field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
-  };
+    setErrors((prev) => (prev[field] ? { ...prev, [field]: "" } : prev));
+  }, []);
+
+  const handleEmailChange = useCallback(
+    (value) => handleChange("email", value),
+    [handleChange]
+  );
+  const handlePasswordChange = useCallback(
+    (value) => handleChange("password", value),
+    [handleChange]
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -127,69 +141,59 @@ export default function LoginPage() {
         </div>
 
         <Card className="glass-card border border-white/10">
-          <CardBody className="p-8 flex flex-col gap-6">
+          <Card.Content className="p-8 flex flex-col gap-6">
             {/* Google Login */}
             <Button
-              onClick={handleGoogleLogin}
-              isLoading={googleLoading}
-              variant="bordered"
-              className="w-full border-white/15 text-slate-300 hover:bg-white/5 hover:border-white/30 font-semibold h-12 transition-all"
-              startContent={
-                !googleLoading && (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                  </svg>
-                )
-              }
+              onPress={handleGoogleLogin}
+              isPending={googleLoading}
+              className="w-full border border-white/15 bg-transparent text-slate-300 hover:bg-white/5 hover:border-white/30 font-semibold h-12 rounded-xl transition-all flex items-center justify-center gap-2"
             >
+              {!googleLoading && (
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  />
+                </svg>
+              )}
               Continue with Google
             </Button>
 
             <div className="flex items-center gap-3">
-              <Divider className="flex-1 bg-white/10" />
+              <Separator className="flex-1 bg-white/10" />
               <span className="text-slate-500 text-xs font-medium px-2">
                 OR
               </span>
-              <Divider className="flex-1 bg-white/10" />
+              <Separator className="flex-1 bg-white/10" />
             </div>
 
             {/* Email/Password Form */}
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <Input
+                <TextField
                   type="email"
-                  label="Email Address"
-                  placeholder="you@example.com"
+                  name="email"
                   value={formData.email}
-                  onValueChange={(val) => handleChange("email", val)}
+                  onChange={handleEmailChange}
                   isInvalid={!!errors.email}
-                  errorMessage={errors.email}
-                  classNames={{
-                    base: "w-full",
-                    inputWrapper:
-                      "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all data-[invalid=true]:border-red-500/60",
-                    input: "text-slate-200 placeholder:text-slate-500",
-                    label: "text-slate-400 text-sm",
-                    errorMessage: "text-red-400 text-xs",
-                  }}
-                  startContent={
+                  className="w-full"
+                >
+                  <Label className="text-slate-400 text-sm mb-1.5 block">Email Address</Label>
+                  <div className="relative w-full">
                     <svg
-                      className="w-4 h-4 text-slate-500 shrink-0"
+                      className="w-4 h-4 text-slate-500 shrink-0 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -201,30 +205,28 @@ export default function LoginPage() {
                         d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                       />
                     </svg>
-                  }
-                />
+                    <Input
+                      placeholder="you@example.com"
+                      className="w-full h-10 pl-9 pr-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none"
+                    />
+                  </div>
+                  {errors.email && <FieldError className="text-red-400 text-xs mt-1">{errors.email}</FieldError>}
+                </TextField>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Input
+                <TextField
                   type={showPassword ? "text" : "password"}
-                  label="Password"
-                  placeholder="Enter your password"
+                  name="password"
                   value={formData.password}
-                  onValueChange={(val) => handleChange("password", val)}
+                  onChange={handlePasswordChange}
                   isInvalid={!!errors.password}
-                  errorMessage={errors.password}
-                  classNames={{
-                    base: "w-full",
-                    inputWrapper:
-                      "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all data-[invalid=true]:border-red-500/60",
-                    input: "text-slate-200 placeholder:text-slate-500",
-                    label: "text-slate-400 text-sm",
-                    errorMessage: "text-red-400 text-xs",
-                  }}
-                  startContent={
+                  className="w-full"
+                >
+                  <Label className="text-slate-400 text-sm mb-1.5 block">Password</Label>
+                  <div className="relative w-full">
                     <svg
-                      className="w-4 h-4 text-slate-500 shrink-0"
+                      className="w-4 h-4 text-slate-500 shrink-0 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -236,12 +238,14 @@ export default function LoginPage() {
                         d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                       />
                     </svg>
-                  }
-                  endContent={
+                    <Input
+                      placeholder="Enter your password"
+                      className="w-full h-10 pl-9 pr-9 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none"
+                    />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="text-slate-500 hover:text-slate-300 transition-colors focus:outline-none"
+                      className="text-slate-500 hover:text-slate-300 transition-colors focus:outline-none absolute right-3 top-1/2 -translate-y-1/2"
                     >
                       {showPassword ? (
                         <svg
@@ -279,14 +283,15 @@ export default function LoginPage() {
                         </svg>
                       )}
                     </button>
-                  }
-                />
+                  </div>
+                  {errors.password && <FieldError className="text-red-400 text-xs mt-1">{errors.password}</FieldError>}
+                </TextField>
               </div>
 
               <Button
                 type="submit"
-                isLoading={loading}
-                className="w-full bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold h-12 shadow-xl shadow-cyan-500/20 hover:opacity-90 transition-opacity mt-2"
+                isPending={loading}
+                className="w-full bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold h-12 shadow-xl shadow-cyan-500/20 hover:opacity-90 transition-opacity mt-2 rounded-xl"
                 size="lg"
               >
                 {loading ? "Signing In..." : "Sign In"}
@@ -302,7 +307,7 @@ export default function LoginPage() {
                 Create Account
               </Link>
             </p>
-          </CardBody>
+          </Card.Content>
         </Card>
 
         <p className="text-center text-slate-600 text-xs mt-6">

@@ -129,68 +129,59 @@ export default function FindDoctorsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Search */}
             <div className="lg:col-span-2">
-              <Input
-                placeholder="Search doctors by name or specialization..."
-                value={search}
-                onValueChange={handleSearch}
-                classNames={{
-                  inputWrapper:
-                    "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all h-12",
-                  input: "text-slate-200 placeholder:text-slate-500 text-sm",
-                }}
-                startContent={
-                  <svg
-                    className="w-4 h-4 text-slate-500 shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+              <div className="relative w-full">
+                <svg
+                  className="w-4 h-4 text-slate-500 shrink-0 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <Input
+                  placeholder="Search doctors by name or specialization..."
+                  value={search}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="w-full h-12 pl-9 pr-9 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => handleSearch("")}
+                    className="text-slate-500 hover:text-slate-300 absolute right-3 top-1/2 -translate-y-1/2"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                }
-                endContent={
-                  search && (
-                    <button
-                      onClick={() => handleSearch("")}
-                      className="text-slate-500 hover:text-slate-300"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )
-                }
-              />
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Specialization Filter */}
             <Select
-              selectedKeys={specialization ? [specialization] : ["all"]}
-              onSelectionChange={(keys) =>
-                handleSpecialization(Array.from(keys)[0] || "all")
-              }
-              classNames={{
-                trigger:
-                  "bg-white/5 border border-white/10 hover:border-cyan-500/40 data-[focus=true]:border-cyan-500 transition-all h-12",
-                value: "text-slate-200 text-sm",
-                popoverContent: "bg-[#0d1b2a] border border-white/10",
-              }}
+              className="w-full"
+              placeholder="Specialization"
+              value={specialization || "all"}
+              onChange={(key) => handleSpecialization(key || "all")}
             >
-              <Select.Trigger>
-                <Select.Value placeholder="Specialization" />
+              <Select.Trigger className="w-full h-12 px-3 flex items-center justify-between gap-2 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 text-sm transition-all focus:outline-none">
+                <Select.Value />
                 <Select.Indicator />
               </Select.Trigger>
-              <Select.Popover>
+              <Select.Popover className="bg-[#0d1b2a] border border-white/10 rounded-xl p-1">
                 <ListBox>
                   {specializations.map((spec) => (
                     <ListBox.Item
                       key={spec.toLowerCase()}
-                      className="text-slate-300 hover:bg-white/5 data-[hover=true]:bg-white/5"
+                      id={spec.toLowerCase()}
+                      textValue={spec}
+                      className="text-slate-300 text-sm px-3 py-2 rounded-lg cursor-pointer outline-none data-[hovered]:bg-white/5 data-[focused]:bg-white/5"
                     >
                       {spec}
                     </ListBox.Item>
@@ -201,27 +192,23 @@ export default function FindDoctorsPage() {
 
             {/* Sort */}
             <Select
-              selectedKeys={sortBy ? [sortBy] : ["default"]}
-              onSelectionChange={(keys) =>
-                handleSort(Array.from(keys)[0] || "default")
-              }
-              classNames={{
-                trigger:
-                  "bg-white/5 border border-white/10 hover:border-cyan-500/40 data-[focus=true]:border-cyan-500 transition-all h-12",
-                value: "text-slate-200 text-sm",
-                popoverContent: "bg-[#0d1b2a] border border-white/10",
-              }}
+              className="w-full"
+              placeholder="Sort By"
+              value={sortBy || "default"}
+              onChange={(key) => handleSort(key || "default")}
             >
-              <Select.Trigger>
-                <Select.Value placeholder="Sort By" />
+              <Select.Trigger className="w-full h-12 px-3 flex items-center justify-between gap-2 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 text-sm transition-all focus:outline-none">
+                <Select.Value />
                 <Select.Indicator />
               </Select.Trigger>
-              <Select.Popover>
+              <Select.Popover className="bg-[#0d1b2a] border border-white/10 rounded-xl p-1">
                 <ListBox>
                   {sortOptions.map((opt) => (
                     <ListBox.Item
                       key={opt.key}
-                      className="text-slate-300 hover:bg-white/5 data-[hover=true]:bg-white/5"
+                      id={opt.key}
+                      textValue={opt.label}
+                      className="text-slate-300 text-sm px-3 py-2 rounded-lg cursor-pointer outline-none data-[hovered]:bg-white/5 data-[focused]:bg-white/5"
                     >
                       {opt.label}
                     </ListBox.Item>
@@ -240,31 +227,55 @@ export default function FindDoctorsPage() {
                   {search && (
                     <Chip
                       size="sm"
-                      onClose={() => handleSearch("")}
                       className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
-                      variant="flat"
                     >
                       Search: {search}
+                      <button
+                        type="button"
+                        aria-label="Remove search filter"
+                        onClick={() => handleSearch("")}
+                        className="ml-1 opacity-70 hover:opacity-100"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </Chip>
                   )}
                   {specialization && specialization !== "all" && (
                     <Chip
                       size="sm"
-                      onClose={() => handleSpecialization("all")}
                       className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
-                      variant="flat"
                     >
                       {specialization}
+                      <button
+                        type="button"
+                        aria-label="Remove specialization filter"
+                        onClick={() => handleSpecialization("all")}
+                        className="ml-1 opacity-70 hover:opacity-100"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </Chip>
                   )}
                   {sortBy !== "default" && (
                     <Chip
                       size="sm"
-                      onClose={() => handleSort("default")}
                       className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                      variant="flat"
                     >
                       {sortOptions.find((o) => o.key === sortBy)?.label}
+                      <button
+                        type="button"
+                        aria-label="Remove sort filter"
+                        onClick={() => handleSort("default")}
+                        className="ml-1 opacity-70 hover:opacity-100"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </Chip>
                   )}
                   <button
@@ -296,11 +307,10 @@ export default function FindDoctorsPage() {
                   <button
                     key={mode}
                     onClick={() => setViewMode(mode)}
-                    className={`p-1.5 rounded-md transition-all ${
-                      viewMode === mode
+                    className={`p-1.5 rounded-md transition-all ${viewMode === mode
                         ? "bg-cyan-500/20 text-cyan-400"
                         : "text-slate-500 hover:text-slate-300"
-                    }`}
+                      }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={icon} />
@@ -337,8 +347,8 @@ export default function FindDoctorsPage() {
               Try adjusting your search filters or browse all available doctors.
             </p>
             <Button
-              onClick={handleClear}
-              className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold"
+              onPress={handleClear}
+              className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold rounded-xl px-5 h-11"
             >
               Clear Filters
             </Button>
@@ -382,7 +392,6 @@ export default function FindDoctorsPage() {
                         <Chip
                           size="sm"
                           className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
-                          variant="flat"
                         >
                           {doctor.specialization}
                         </Chip>
@@ -407,14 +416,12 @@ export default function FindDoctorsPage() {
                         {doctor.hospitalName || "—"}
                       </td>
                       <td>
-                        <Button
-                          as="a"
+                        <a
                           href={`/find-doctors/${doctor._id}`}
-                          size="sm"
-                          className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold"
+                          className="inline-flex items-center justify-center h-8 px-4 rounded-lg bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold text-sm hover:opacity-90 transition-opacity"
                         >
                           Book
-                        </Button>
+                        </a>
                       </td>
                     </tr>
                   ))}
@@ -427,19 +434,43 @@ export default function FindDoctorsPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-center mt-10">
-            <Pagination
-              total={totalPages}
-              page={page}
-              onChange={setPage}
-              showControls
-              classNames={{
-                wrapper: "gap-1",
-                item: "bg-white/5 border border-white/10 text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500/30 hover:text-cyan-400 transition-all",
-                cursor: "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold shadow-lg shadow-cyan-500/20",
-                prev: "bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10",
-                next: "bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10",
-              }}
-            />
+            <Pagination>
+              <Pagination.Content className="gap-1">
+                <Pagination.Item>
+                  <Pagination.Previous
+                    isDisabled={page === 1}
+                    onPress={() => setPage((p) => Math.max(1, p - 1))}
+                    className="bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 rounded-lg"
+                  >
+                    <Pagination.PreviousIcon />
+                  </Pagination.Previous>
+                </Pagination.Item>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <Pagination.Item key={p}>
+                    <Pagination.Link
+                      isActive={page === p}
+                      onPress={() => setPage(p)}
+                      className={
+                        page === p
+                          ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold shadow-lg shadow-cyan-500/20 rounded-lg"
+                          : "bg-white/5 border border-white/10 text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500/30 hover:text-cyan-400 transition-all rounded-lg"
+                      }
+                    >
+                      {p}
+                    </Pagination.Link>
+                  </Pagination.Item>
+                ))}
+                <Pagination.Item>
+                  <Pagination.Next
+                    isDisabled={page === totalPages}
+                    onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    className="bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 rounded-lg"
+                  >
+                    <Pagination.NextIcon />
+                  </Pagination.Next>
+                </Pagination.Item>
+              </Pagination.Content>
+            </Pagination>
           </div>
         )}
       </div>
