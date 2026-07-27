@@ -3,7 +3,7 @@ import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 
 const client = new MongoClient(process.env.MONGODB_URI);
-await client.connect();
+// await client.connect();
 const db = client.db("MediCare");
 
 export const auth = betterAuth({
