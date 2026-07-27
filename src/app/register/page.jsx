@@ -16,6 +16,7 @@ import {
   Separator,
 } from "@heroui/react";
 import { signUp, signIn } from "@/lib/authClient";
+import { createUser } from "@/lib/api";
 import { toast } from "react-toastify";
 
 export default function RegisterPage() {
@@ -29,6 +30,7 @@ export default function RegisterPage() {
     email: "",
     phone: "",
     gender: "",
+    role: "patient",
     photo: "",
     password: "",
     confirmPassword: "",
@@ -106,6 +108,8 @@ export default function RegisterPage() {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
       newErrors.email = "Enter a valid email address";
 
+    if (!formData.role) newErrors.role = "Please select an account type";
+
     if (!formData.photo.trim()) newErrors.photo = "Profile photo URL is required";
     else if (!/^https?:\/\/.+\..+/.test(formData.photo.trim()))
       newErrors.photo = "Enter a valid image URL (must start with http:// or https://)";
@@ -163,6 +167,10 @@ export default function RegisterPage() {
     (key) => handleChange("gender", key || ""),
     [handleChange]
   );
+  const handleRoleChange = useCallback(
+    (key) => handleChange("role", key || "patient"),
+    [handleChange]
+  );
   const handlePhotoChange = useCallback(
     (value) => handleChange("photo", value),
     [handleChange]
@@ -195,8 +203,26 @@ export default function RegisterPage() {
       if (result?.error) {
         toast.error(result.error.message || "Registration failed");
       } else {
+        // Persist the profile fields better-auth doesn't manage.
+        // `role` is sent here (not to signUp) so the server stays in control
+        // of it — see the note in the Express route.
+        try {
+          await createUser({
+            name: formData.name.trim(),
+            email: formData.email.trim(),
+            photo: formData.photo.trim(),
+            phone: formData.phone.trim(),
+            gender: formData.gender,
+            role: formData.role,
+          });
+        } catch {
+          // Non-fatal: the account exists, profile sync can retry on login.
+        }
+
         toast.success("Account created successfully! Welcome to MediCare Connect.");
-        router.push("/dashboard/patient");
+        // Doctors go straight to their own dashboard; it shows a
+        // "pending verification" state until an admin approves them.
+        router.push(`/dashboard/${formData.role}`);
         router.refresh();
       }
     } catch {
@@ -444,6 +470,61 @@ export default function RegisterPage() {
                   </Select.Popover>
                 </Select>
               </div>
+
+              {/* Account Type (role) */}
+              <Select
+                className="w-full"
+                placeholder="Select account type"
+                value={formData.role || null}
+                onChange={handleRoleChange}
+              >
+                <Label className="text-slate-400 text-sm mb-1.5 block">
+                  Account Type
+                </Label>
+                <Select.Trigger className="w-full h-10 px-3 flex items-center justify-between gap-2 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 text-sm transition-all focus:outline-none">
+                  <Select.Value />
+                  <Select.Indicator />
+                </Select.Trigger>
+                <Select.Popover className="bg-[#0d1b2a] border border-white/10 rounded-xl p-1">
+                  <ListBox>
+                    {[
+                      { key: "patient", label: "Patient — book appointments" },
+                      { key: "doctor", label: "Doctor — offer consultations" },
+                    ].map((r) => (
+                      <ListBox.Item
+                        key={r.key}
+                        id={r.key}
+                        textValue={r.label}
+                        className="text-slate-300 text-sm px-3 py-2 rounded-lg cursor-pointer outline-none data-[hovered]:bg-white/5 data-[focused]:bg-white/5"
+                      >
+                        {r.label}
+                      </ListBox.Item>
+                    ))}
+                  </ListBox>
+                </Select.Popover>
+                {errors.role && (
+                  <p className="text-red-400 text-xs mt-1">{errors.role}</p>
+                )}
+                {formData.role === "doctor" && (
+                  <p className="text-amber-400/80 text-xs mt-1.5 flex items-start gap-1.5">
+                    <svg
+                      className="w-3.5 h-3.5 shrink-0 mt-0.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    Your account stays pending until an admin verifies you.
+                    You can complete your doctor profile right away.
+                  </p>
+                )}
+              </Select>
 
               {/* Photo URL */}
               <TextField

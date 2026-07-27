@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Avatar, Chip } from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
+import { getDoctorByEmail } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 function SidebarLink({ href, icon, label, badge }) {
@@ -143,6 +144,9 @@ export default function DashboardLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [doctorProfile, setDoctorProfile] = useState(null);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -152,7 +156,42 @@ export default function DashboardLayout({ children }) {
 
   useEffect(() => {
     setSidebarOpen(false);
+    setIsDropdownOpen(false);
   }, [pathname]);
+
+  // Doctors can use the dashboard while unverified — we just show a banner.
+  useEffect(() => {
+    let cancelled = false;
+    async function loadDoctorProfile() {
+      if (dbUser?.role !== "doctor" || !user?.email) {
+        setDoctorProfile(null);
+        return;
+      }
+      try {
+        const profile = await getDoctorByEmail(user.email);
+        if (!cancelled) setDoctorProfile(profile || null);
+      } catch {
+        // 404 simply means the profile hasn't been created yet.
+        if (!cancelled) setDoctorProfile(null);
+      }
+    }
+    loadDoctorProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [dbUser?.role, user?.email]);
+
+  // Close the avatar dropdown when clicking anywhere outside it
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   if (loading) return <LoadingSpinner fullScreen text="Loading dashboard..." />;
   if (!isAuthenticated) return null;
@@ -164,6 +203,8 @@ export default function DashboardLayout({ children }) {
       : role === "doctor"
         ? doctorLinks
         : patientLinks;
+
+  const isVerifiedDoctor = doctorProfile?.verificationStatus === "verified";
 
   const roleColors = {
     admin: "from-red-500 to-pink-600",
@@ -342,19 +383,158 @@ export default function DashboardLayout({ children }) {
             >
               Find Doctors
             </Link>
-            <Avatar size="sm" className="ring-2 ring-cyan-500/30">
-              <Avatar.Image src={user?.image || ""} alt={user?.name || "User"} />
-              <Avatar.Fallback
-                className={`bg-gradient-to-br ${roleColors[role]} text-white font-bold text-xs`}
+            {/* Avatar Dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                aria-label="Open user menu"
+                aria-expanded={isDropdownOpen}
+                className="flex items-center rounded-full hover:ring-cyan-500 transition-all cursor-pointer"
               >
-                {user?.name?.[0]?.toUpperCase() || "U"}
-              </Avatar.Fallback>
-            </Avatar>
+                <Avatar size="sm" className="ring-2 ring-cyan-500/30">
+                  <Avatar.Image
+                    src={user?.image || ""}
+                    alt={user?.name || "User"}
+                  />
+                  <Avatar.Fallback
+                    className={`bg-gradient-to-br ${roleColors[role]} text-white font-bold text-xs`}
+                  >
+                    {user?.name?.[0]?.toUpperCase() || "U"}
+                  </Avatar.Fallback>
+                </Avatar>
+              </button>
+
+              {isDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 glass-card border border-white/10 rounded-xl shadow-xl shadow-black/30 py-2 z-50">
+                  {/* Profile Info */}
+                  <div className="flex flex-col gap-1 py-2 px-4 border-b border-white/5">
+                    <p className="text-sm font-semibold text-white truncate">
+                      {user?.name}
+                    </p>
+                    <p className="text-xs text-slate-400 truncate">
+                      {user?.email}
+                    </p>
+                    <span
+                      className={`mt-1 inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium capitalize w-fit border ${roleBadgeColors[role]}`}
+                    >
+                      {role}
+                    </span>
+                  </div>
+
+                  {/* My Profile */}
+                  <Link
+                    href={`/dashboard/${role}/profile`}
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 transition-all"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                    My Profile
+                  </Link>
+
+                  {/* Back to Home */}
+                  <Link
+                    href="/"
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 transition-all"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                      />
+                    </svg>
+                    Back to Home
+                  </Link>
+
+                  {/* Sign Out */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      logout();
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-all"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
+                    </svg>
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
         {/* Page Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-hidden">
+          {role === "doctor" && !isVerifiedDoctor && (
+            <div className="mb-6 rounded-xl border border-amber-500/25 bg-amber-500/5 p-4 flex items-start gap-3">
+              <svg
+                className="w-5 h-5 text-amber-400 shrink-0 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <div className="flex-1">
+                <p className="text-amber-400 font-semibold text-sm">
+                  {doctorProfile
+                    ? "Verification pending"
+                    : "Complete your doctor profile"}
+                </p>
+                <p className="text-slate-400 text-xs mt-1 leading-relaxed">
+                  {doctorProfile
+                    ? "An administrator is reviewing your profile. You will appear in Find Doctors and start receiving appointments once approved."
+                    : "Add your specialization, experience and consultation fee so an admin can verify you."}
+                </p>
+              </div>
+              {!doctorProfile && (
+                <Link
+                  href="/dashboard/doctor/profile"
+                  className="shrink-0 inline-flex items-center justify-center h-8 px-3 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 text-xs font-semibold transition-colors"
+                >
+                  Set up profile
+                </Link>
+              )}
+            </div>
+          )}
           {children}
         </main>
       </div>

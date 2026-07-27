@@ -3,11 +3,34 @@
 const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
+// Cache the JWT so we don't hit /api/auth/token on every single request.
+let cachedToken = null;
+let cachedTokenAt = 0;
+const TOKEN_TTL = 4 * 60 * 1000; // refresh every 4 minutes
+
+export function clearAuthToken() {
+    cachedToken = null;
+    cachedTokenAt = 0;
+}
+
 async function getToken() {
+    if (cachedToken && Date.now() - cachedTokenAt < TOKEN_TTL) {
+        return cachedToken;
+    }
     try {
-        const { authClient } = await import("./authClient");
-        const session = await authClient.getSession();
-        return session?.data?.session?.token || null;
+        // NOTE: session.token is an opaque signed string, NOT a JWT.
+        // The Express backend verifies with jwtVerify() against the JWKS
+        // endpoint, so we must ask better-auth for a real JWT here.
+        const base =
+            process.env.NEXT_PUBLIC_BETTER_AUTH_URL || window.location.origin;
+        const res = await fetch(`${base}/api/auth/token`, {
+            credentials: "include",
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        cachedToken = data?.token || null;
+        cachedTokenAt = Date.now();
+        return cachedToken;
     } catch {
         return null;
     }

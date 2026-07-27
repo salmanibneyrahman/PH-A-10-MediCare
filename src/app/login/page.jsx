@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -13,11 +13,20 @@ import {
   Separator,
 } from "@heroui/react";
 import { signIn } from "@/lib/authClient";
+import { getUserByEmail } from "@/lib/api";
 import { toast } from "react-toastify";
 
 // export const metadata = {
 //   title: "Login",
 // };
+
+// Demo administrator account shown on the login page for reviewers.
+// Create it once: register normally with this email, then in mongosh run
+//   db.users.updateOne({ email: "admin@medicare.com" }, { $set: { role: "admin" } })
+const DEMO_ADMIN = {
+  email: "admin@medicare.com",
+  password: "Admin@123",
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,22 +46,10 @@ export default function LoginPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Stable across renders (empty deps) — safe because both setters use the
-  // functional form, so no stale-closure risk. Clearing the error is now done
-  // inside the updater, which lets React bail out when nothing actually changed.
-  const handleChange = useCallback((field, value) => {
+  const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => (prev[field] ? { ...prev, [field]: "" } : prev));
-  }, []);
-
-  const handleEmailChange = useCallback(
-    (value) => handleChange("email", value),
-    [handleChange]
-  );
-  const handlePasswordChange = useCallback(
-    (value) => handleChange("password", value),
-    [handleChange]
-  );
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,7 +64,16 @@ export default function LoginPage() {
         toast.error(result.error.message || "Invalid email or password");
       } else {
         toast.success("Welcome back!");
-        router.push("/dashboard/patient");
+        // Look up the role so each user lands on their own dashboard.
+        let dest = "/dashboard/patient";
+        try {
+          const dbUser = await getUserByEmail(formData.email.trim());
+          if (dbUser?.role === "admin") dest = "/dashboard/admin";
+          else if (dbUser?.role === "doctor") dest = "/dashboard/doctor";
+        } catch {
+          // Fall back to the patient dashboard.
+        }
+        router.push(dest);
         router.refresh();
       }
     } catch {
@@ -75,6 +81,11 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fillDemoAdmin = () => {
+    setFormData({ email: DEMO_ADMIN.email, password: DEMO_ADMIN.password });
+    setErrors({});
   };
 
   const handleGoogleLogin = async () => {
@@ -182,14 +193,7 @@ export default function LoginPage() {
             {/* Email/Password Form */}
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <TextField
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleEmailChange}
-                  isInvalid={!!errors.email}
-                  className="w-full"
-                >
+                <TextField isInvalid={!!errors.email} className="w-full">
                   <Label className="text-slate-400 text-sm mb-1.5 block">Email Address</Label>
                   <div className="relative w-full">
                     <svg
@@ -206,7 +210,10 @@ export default function LoginPage() {
                       />
                     </svg>
                     <Input
+                      type="email"
                       placeholder="you@example.com"
+                      value={formData.email}
+                      onChange={(e) => handleChange("email", e.target.value)}
                       className="w-full h-10 pl-9 pr-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none"
                     />
                   </div>
@@ -215,14 +222,7 @@ export default function LoginPage() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <TextField
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={formData.password}
-                  onChange={handlePasswordChange}
-                  isInvalid={!!errors.password}
-                  className="w-full"
-                >
+                <TextField isInvalid={!!errors.password} className="w-full">
                   <Label className="text-slate-400 text-sm mb-1.5 block">Password</Label>
                   <div className="relative w-full">
                     <svg
@@ -239,7 +239,10 @@ export default function LoginPage() {
                       />
                     </svg>
                     <Input
+                      type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
+                      value={formData.password}
+                      onChange={(e) => handleChange("password", e.target.value)}
                       className="w-full h-10 pl-9 pr-9 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none"
                     />
                     <button
@@ -297,6 +300,53 @@ export default function LoginPage() {
                 {loading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
+
+            {/* Demo credentials for reviewers / testers */}
+            <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <svg
+                  className="w-4 h-4 text-amber-400 shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <p className="text-amber-400 text-xs font-bold uppercase tracking-wider">
+                  Demo Admin Access
+                </p>
+              </div>
+              <p className="text-slate-400 text-xs mb-3 leading-relaxed">
+                For reviewers: sign in as an administrator to verify doctors
+                and manage the platform.
+              </p>
+              <div className="flex flex-col gap-1.5 mb-3">
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span className="text-slate-500">Email</span>
+                  <code className="text-slate-200 font-mono">
+                    {DEMO_ADMIN.email}
+                  </code>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span className="text-slate-500">Password</span>
+                  <code className="text-slate-200 font-mono">
+                    {DEMO_ADMIN.password}
+                  </code>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={fillDemoAdmin}
+                className="w-full h-9 rounded-lg border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs font-semibold transition-colors"
+              >
+                Click here to fill admin credentials
+              </button>
+            </div>
 
             <p className="text-center text-slate-400 text-sm">
               Don&apos;t have an account?{" "}

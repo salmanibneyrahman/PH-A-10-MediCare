@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardBody, Button } from "@heroui/react";
+import { Card, Button } from "@heroui/react";
 import { getAnalytics } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import {
@@ -21,11 +21,11 @@ import {
 } from "recharts";
 
 const MONTH_NAMES = [
-  "Jan","Feb","Mar","Apr","May","Jun",
-  "Jul","Aug","Sep","Oct","Nov","Dec",
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-const COLORS = ["#06b6d4","#6366f1","#10b981","#f59e0b","#ef4444","#8b5cf6"];
+const COLORS = ["#06b6d4", "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -167,7 +167,7 @@ export default function AdminDashboardPage() {
         {overviewCards.map((card, index) => (
           <Link key={card.label} href={card.href}>
             <Card className="glass-card border border-white/10 hover:border-white/20 transition-all duration-300 hover-lift cursor-pointer">
-              <CardBody className="p-5 flex flex-col gap-4">
+              <Card.Content className="p-5 flex flex-col gap-4">
                 <div className="flex items-start justify-between">
                   <div
                     className={`w-11 h-11 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center shadow-lg ${card.glow}`}
@@ -206,7 +206,7 @@ export default function AdminDashboardPage() {
                   </p>
                   <p className="text-slate-400 text-sm mt-0.5">{card.label}</p>
                 </div>
-              </CardBody>
+              </Card.Content>
             </Card>
           </Link>
         ))}
@@ -216,7 +216,7 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Monthly Appointments Line Chart */}
         <Card className="glass-card border border-white/10">
-          <CardBody className="p-6">
+          <Card.Content className="p-6">
             <h3 className="text-white font-bold text-base mb-6">
               Monthly Appointments
             </h3>
@@ -254,12 +254,12 @@ export default function AdminDashboardPage() {
                 </LineChart>
               </ResponsiveContainer>
             )}
-          </CardBody>
+          </Card.Content>
         </Card>
 
         {/* Platform Distribution Pie Chart */}
         <Card className="glass-card border border-white/10">
-          <CardBody className="p-6">
+          <Card.Content className="p-6">
             <h3 className="text-white font-bold text-base mb-6">
               Platform Distribution
             </h3>
@@ -307,13 +307,13 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
             </div>
-          </CardBody>
+          </Card.Content>
         </Card>
       </div>
 
       {/* Doctor Performance Bar Chart */}
       <Card className="glass-card border border-white/10">
-        <CardBody className="p-6">
+        <Card.Content className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-white font-bold text-base">
               Doctor Performance (Rating Based)
@@ -370,7 +370,7 @@ export default function AdminDashboardPage() {
               </BarChart>
             </ResponsiveContainer>
           )}
-        </CardBody>
+        </Card.Content>
       </Card>
 
       {/* Quick Actions */}
@@ -407,7 +407,7 @@ export default function AdminDashboardPage() {
         ].map((action) => (
           <Link key={action.label} href={action.href}>
             <Card className="glass-card border border-white/10 hover:border-white/20 transition-all duration-300 hover-lift cursor-pointer h-full">
-              <CardBody className="p-5 flex flex-col gap-3">
+              <Card.Content className="p-5 flex flex-col gap-3">
                 <div
                   className={`w-10 h-10 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-lg`}
                 >
@@ -429,7 +429,7 @@ export default function AdminDashboardPage() {
                   <p className="text-white font-bold text-sm">{action.label}</p>
                   <p className="text-slate-500 text-xs mt-0.5">{action.desc}</p>
                 </div>
-              </CardBody>
+              </Card.Content>
             </Card>
           </Link>
         ))}

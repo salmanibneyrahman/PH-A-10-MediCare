@@ -8,7 +8,7 @@ import {
     useCallback,
 } from "react";
 import { useSession, signOut } from "@/lib/authClient";
-import { createUser, getUserByEmail } from "@/lib/api";
+import { createUser, getUserByEmail, clearAuthToken } from "@/lib/api";
 
 const AuthContext = createContext(null);
 
@@ -59,6 +59,7 @@ export function AuthProvider({ children }) {
 
     const logout = async () => {
         await signOut();
+        clearAuthToken();
         setDbUser(null);
     };
 
