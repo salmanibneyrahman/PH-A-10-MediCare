@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Avatar, Button, Chip } from "@heroui/react";
+import { Avatar, Chip } from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
@@ -14,16 +14,14 @@ function SidebarLink({ href, icon, label, badge }) {
   return (
     <Link
       href={href}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative ${
-        isActive
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative ${isActive
           ? "bg-gradient-to-r from-cyan-500/20 to-indigo-500/10 text-cyan-400 border border-cyan-500/30 shadow-lg shadow-cyan-500/10"
           : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
-      }`}
+        }`}
     >
       <svg
-        className={`w-5 h-5 shrink-0 transition-colors ${
-          isActive ? "text-cyan-400" : "text-slate-500 group-hover:text-slate-300"
-        }`}
+        className={`w-5 h-5 shrink-0 transition-colors ${isActive ? "text-cyan-400" : "text-slate-500 group-hover:text-slate-300"
+          }`}
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -164,8 +162,8 @@ export default function DashboardLayout({ children }) {
     role === "admin"
       ? adminLinks
       : role === "doctor"
-      ? doctorLinks
-      : patientLinks;
+        ? doctorLinks
+        : patientLinks;
 
   const roleColors = {
     admin: "from-red-500 to-pink-600",
@@ -191,9 +189,8 @@ export default function DashboardLayout({ children }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-72 z-40 flex flex-col bg-[#060c1a] border-r border-white/5 transition-transform duration-300 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0`}
+        className={`fixed top-0 left-0 h-full w-72 z-40 flex flex-col bg-[#060c1a] border-r border-white/5 transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } lg:translate-x-0`}
       >
         {/* Sidebar Header */}
         <div className="p-6 border-b border-white/5">
@@ -227,15 +224,14 @@ export default function DashboardLayout({ children }) {
         {/* User Profile */}
         <div className="p-5 border-b border-white/5">
           <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
-            <Avatar
-              src={user?.image || ""}
-              name={user?.name || "U"}
-              size="md"
-              classNames={{
-                base: `bg-gradient-to-br ${roleColors[role]}`,
-                name: "text-white font-bold",
-              }}
-            />
+            <Avatar size="md">
+              <Avatar.Image src={user?.image || ""} alt={user?.name || "User"} />
+              <Avatar.Fallback
+                className={`bg-gradient-to-br ${roleColors[role]} text-white font-bold`}
+              >
+                {user?.name?.[0]?.toUpperCase() || "U"}
+              </Avatar.Fallback>
+            </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-white font-semibold text-sm truncate">
                 {user?.name}
@@ -340,25 +336,20 @@ export default function DashboardLayout({ children }) {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button
-              as={Link}
+            <Link
               href="/find-doctors"
-              size="sm"
-              variant="bordered"
-              className="hidden sm:flex border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 font-medium text-xs"
+              className="hidden sm:inline-flex items-center justify-center h-8 px-3 rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 font-medium text-xs transition-colors"
             >
               Find Doctors
-            </Button>
-            <Avatar
-              src={user?.image || ""}
-              name={user?.name || "U"}
-              size="sm"
-              className="ring-2 ring-cyan-500/30"
-              classNames={{
-                base: `bg-gradient-to-br ${roleColors[role]}`,
-                name: "text-white font-bold text-xs",
-              }}
-            />
+            </Link>
+            <Avatar size="sm" className="ring-2 ring-cyan-500/30">
+              <Avatar.Image src={user?.image || ""} alt={user?.name || "User"} />
+              <Avatar.Fallback
+                className={`bg-gradient-to-br ${roleColors[role]} text-white font-bold text-xs`}
+              >
+                {user?.name?.[0]?.toUpperCase() || "U"}
+              </Avatar.Fallback>
+            </Avatar>
           </div>
         </header>
 

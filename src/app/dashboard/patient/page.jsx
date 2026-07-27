@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardBody, Button, Avatar } from "@heroui/react";
+import { Card, Avatar } from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
 import { getPatientAppointments, getPatientPayments } from "@/lib/api";
 import StatusBadge from "@/components/StatusBadge";
@@ -94,15 +94,12 @@ export default function PatientDashboardPage() {
       {/* Welcome */}
       <div className="glass-card border border-white/10 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 overflow-hidden relative">
         <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-        <Avatar
-          src={user?.image || ""}
-          name={user?.name || "P"}
-          className="w-16 h-16 ring-4 ring-cyan-500/20 shrink-0"
-          classNames={{
-            base: "bg-gradient-to-br from-emerald-500 to-teal-600",
-            name: "text-white font-black text-xl",
-          }}
-        />
+        <Avatar className="w-16 h-16 ring-4 ring-cyan-500/20 shrink-0">
+          <Avatar.Image src={user?.image || ""} alt={user?.name || "Patient"} />
+          <Avatar.Fallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-black text-xl">
+            {user?.name?.[0]?.toUpperCase() || "P"}
+          </Avatar.Fallback>
+        </Avatar>
         <div className="flex-1 relative">
           <p className="text-slate-400 text-sm">Welcome back,</p>
           <h1 className="text-2xl font-black text-white">
@@ -117,13 +114,12 @@ export default function PatientDashboardPage() {
             })}
           </p>
         </div>
-        <Button
-          as={Link}
+        <Link
           href="/find-doctors"
-          className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold shadow-lg shadow-cyan-500/20 shrink-0"
+          className="inline-flex items-center justify-center h-10 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 text-white text-sm font-semibold shadow-lg shadow-cyan-500/20 shrink-0 hover:opacity-90 transition-opacity"
         >
           Book Appointment
-        </Button>
+        </Link>
       </div>
 
       {/* Stat Cards */}
@@ -131,7 +127,7 @@ export default function PatientDashboardPage() {
         {statCards.map((stat) => (
           <Link key={stat.label} href={stat.href}>
             <Card className="glass-card border border-white/10 hover:border-white/20 transition-all duration-300 hover-lift cursor-pointer">
-              <CardBody className="p-5 flex flex-col gap-4">
+              <Card.Content className="p-5 flex flex-col gap-4">
                 <div className="flex items-start justify-between">
                   <div
                     className={`w-11 h-11 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg ${stat.glow}`}
@@ -172,7 +168,7 @@ export default function PatientDashboardPage() {
                     {stat.label}
                   </p>
                 </div>
-              </CardBody>
+              </Card.Content>
             </Card>
           </Link>
         ))}
@@ -181,20 +177,17 @@ export default function PatientDashboardPage() {
       {/* Recent Appointments */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card className="glass-card border border-white/10">
-          <CardBody className="p-6">
+          <Card.Content className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-white font-bold text-lg">
                 Upcoming Appointments
               </h2>
-              <Button
-                as={Link}
+              <Link
                 href="/dashboard/patient/appointments"
-                size="sm"
-                variant="bordered"
-                className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs"
+                className="inline-flex items-center justify-center h-8 px-3 rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs font-medium transition-colors"
               >
                 View All
-              </Button>
+              </Link>
             </div>
 
             {upcoming.length === 0 ? (
@@ -222,14 +215,12 @@ export default function PatientDashboardPage() {
                     Book your first appointment today
                   </p>
                 </div>
-                <Button
-                  as={Link}
+                <Link
                   href="/find-doctors"
-                  size="sm"
-                  className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold"
+                  className="inline-flex items-center justify-center h-8 px-4 rounded-lg bg-gradient-to-r from-cyan-500 to-indigo-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity"
                 >
                   Find a Doctor
-                </Button>
+                </Link>
               </div>
             ) : (
               <div className="flex flex-col gap-3">
@@ -266,24 +257,21 @@ export default function PatientDashboardPage() {
                 ))}
               </div>
             )}
-          </CardBody>
+          </Card.Content>
         </Card>
 
         <Card className="glass-card border border-white/10">
-          <CardBody className="p-6">
+          <Card.Content className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-white font-bold text-lg">
                 Recent History
               </h2>
-              <Button
-                as={Link}
+              <Link
                 href="/dashboard/patient/appointments"
-                size="sm"
-                variant="bordered"
-                className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs"
+                className="inline-flex items-center justify-center h-8 px-3 rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs font-medium transition-colors"
               >
                 View All
-              </Button>
+              </Link>
             </div>
 
             {appointments.length === 0 ? (
@@ -331,7 +319,7 @@ export default function PatientDashboardPage() {
                 ))}
               </div>
             )}
-          </CardBody>
+          </Card.Content>
         </Card>
       </div>
     </div>

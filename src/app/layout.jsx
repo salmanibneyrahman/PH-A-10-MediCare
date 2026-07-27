@@ -2,8 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import LayoutShell from "@/components/LayoutShell";
 import { AuthProvider } from "@/context/AuthContext";
 
 const geistSans = Geist({
@@ -32,9 +31,8 @@ export default function RootLayout({ children }) {
                 className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0a0f1e] text-slate-200`}
             >
                 <AuthProvider>
-                    <Navbar />
-                    <main className="min-h-screen">{children}</main>
-                    <Footer />
+                    {/* LayoutShell hides Navbar/Footer on /dashboard/* routes */}
+                    <LayoutShell>{children}</LayoutShell>
                     <ToastContainer
                         position="top-right"
                         autoClose={3000}
