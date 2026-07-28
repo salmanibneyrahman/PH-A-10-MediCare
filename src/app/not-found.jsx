@@ -40,7 +40,7 @@ export default function NotFound() {
 
                     <div className="flex gap-3 flex-wrap justify-center">
                         <Button
-                            as={Link}
+                            as="a"
                             href="/"
                             className="bg-gradient-to-r from-cyan-500 to-indigo-500 text-white font-semibold px-8"
                             size="lg"
@@ -48,7 +48,7 @@ export default function NotFound() {
                             Back to Home
                         </Button>
                         <Button
-                            as={Link}
+                            as="a"
                             href="/find-doctors"
                             variant="bordered"
                             className="border-cyan-500/50 text-cyan-400 font-semibold px-8"

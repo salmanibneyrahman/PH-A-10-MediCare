@@ -142,7 +142,7 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex gap-3 flex-wrap">
             <Button
-              as={Link}
+              as="a"
               href="/dashboard/admin/doctors"
               size="sm"
               className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold shadow-lg shadow-cyan-500/20"
@@ -150,7 +150,7 @@ export default function AdminDashboardPage() {
               Verify Doctors
             </Button>
             <Button
-              as={Link}
+              as="a"
               href="/dashboard/admin/analytics"
               size="sm"
               variant="bordered"
@@ -319,7 +319,7 @@ export default function AdminDashboardPage() {
               Doctor Performance (Rating Based)
             </h3>
             <Button
-              as={Link}
+              as="a"
               href="/dashboard/admin/analytics"
               size="sm"
               variant="bordered"

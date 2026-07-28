@@ -179,7 +179,7 @@ export default function DoctorDetailsPage() {
             Doctor not found
           </h2>
           <Button
-            as={Link}
+            as="a"
             href="/find-doctors"
             className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold"
           >
@@ -606,7 +606,7 @@ export default function DoctorDetailsPage() {
                         </p>
                       </div>
                       <Button
-                        as={Link}
+                        as="a"
                         href="/login"
                         className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold"
                       >

@@ -150,7 +150,7 @@ export default function DoctorCard({ doctor }) {
 
                     {/* Action Button */}
                     <Button
-                        as={Link}
+                        as="a"
                         href={`/find-doctors/${_id}`}
                         className="w-full bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold shadow-lg shadow-cyan-500/20 hover:opacity-90 transition-opacity"
                         size="sm"

@@ -1,18 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
-  CardBody,
   Button,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
   Select,
-  SelectItem,
+  ListBox,
 } from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -37,7 +32,8 @@ const TIME_SLOTS = [
 
 export default function PatientAppointmentsPage() {
   const { dbUser } = useAuth();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedApt, setSelectedApt] = useState(null);
@@ -48,6 +44,9 @@ export default function PatientAppointmentsPage() {
     appointmentTime: "",
   });
   const [activeFilter, setActiveFilter] = useState("all");
+
+  const onOpen = () => setIsOpen(true);
+  const onClose = () => setIsOpen(false);
 
   useEffect(() => {
     fetchAppointments();
@@ -175,7 +174,7 @@ export default function PatientAppointmentsPage() {
 
       {filtered.length === 0 ? (
         <Card className="glass-card border border-white/10">
-          <CardBody className="p-16 flex flex-col items-center gap-4 text-center">
+          <Card.Content className="p-16 flex flex-col items-center gap-4 text-center">
             <div className="w-20 h-20 rounded-2xl bg-slate-800 flex items-center justify-center">
               <svg
                 className="w-10 h-10 text-slate-600"
@@ -203,14 +202,13 @@ export default function PatientAppointmentsPage() {
             </div>
             {activeFilter === "all" && (
               <Button
-                as="a"
-                href="/find-doctors"
+                onPress={() => router.push("/find-doctors")}
                 className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold"
               >
                 Find a Doctor
               </Button>
             )}
-          </CardBody>
+          </Card.Content>
         </Card>
       ) : (
         <div className="flex flex-col gap-4">
@@ -219,7 +217,7 @@ export default function PatientAppointmentsPage() {
               key={apt._id}
               className="glass-card border border-white/10 hover:border-white/15 transition-all"
             >
-              <CardBody className="p-5">
+              <Card.Content className="p-5">
                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                   <div className="flex items-center gap-4 flex-1 min-w-0">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-indigo-600/20 flex items-center justify-center shrink-0">
@@ -333,8 +331,7 @@ export default function PatientAppointmentsPage() {
                     {apt.appointmentStatus === "completed" && (
                       <Button
                         size="sm"
-                        as="a"
-                        href="/dashboard/patient/reviews"
+                        onPress={() => router.push("/dashboard/patient/reviews")}
                         className="bg-gradient-to-r from-amber-500 to-orange-600 text-white font-semibold text-xs"
                       >
                         Leave Review
@@ -342,149 +339,141 @@ export default function PatientAppointmentsPage() {
                     )}
                   </div>
                 </div>
-              </CardBody>
+              </Card.Content>
             </Card>
           ))}
         </div>
       )}
 
       {/* Cancel Modal */}
-      <Modal
-        isOpen={isOpen && modalType === "cancel"}
-        onClose={onClose}
-        size="sm"
-        classNames={{
-          base: "glass-card border border-white/10",
-          header: "border-b border-white/10",
-          footer: "border-t border-white/10",
-        }}
-      >
-        <ModalContent>
-          <ModalHeader>
-            <h3 className="text-white font-bold">
-              Cancel Appointment
-            </h3>
-          </ModalHeader>
-          <ModalBody>
-            <p className="text-slate-400 text-sm py-2">
-              Are you sure you want to cancel your appointment with{" "}
-              <span className="text-white font-semibold">
-                {selectedApt?.doctorName}
-              </span>{" "}
-              on {selectedApt?.appointmentDate}? This action cannot be
-              undone.
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="bordered"
-              onPress={onClose}
-              className="border-white/15 text-slate-300"
-            >
-              Keep Appointment
-            </Button>
-            <Button
-              onPress={handleCancel}
-              isLoading={actionLoading}
-              className="bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold"
-            >
-              Yes, Cancel
-            </Button>
-          </ModalFooter>
-        </ModalContent>
+      <Modal isOpen={isOpen && modalType === "cancel"} onClose={onClose}>
+        <Modal.Backdrop>
+          <Modal.Container>
+            <Modal.Dialog>
+              <Modal.Header>
+                <Modal.Heading>Cancel Appointment</Modal.Heading>
+              </Modal.Header>
+              <Modal.Body>
+                <p className="text-slate-400 text-sm py-2">
+                  Are you sure you want to cancel your appointment with{" "}
+                  <span className="text-white font-semibold">
+                    {selectedApt?.doctorName}
+                  </span>{" "}
+                  on {selectedApt?.appointmentDate}? This action cannot be
+                  undone.
+                </p>
+              </Modal.Body>
+              <Modal.Footer>
+                <Button
+                  variant="bordered"
+                  onPress={onClose}
+                  className="border-white/15 text-slate-300"
+                >
+                  Keep Appointment
+                </Button>
+                <Button
+                  onPress={handleCancel}
+                  isLoading={actionLoading}
+                  className="bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold"
+                >
+                  Yes, Cancel
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
       </Modal>
 
       {/* Reschedule Modal */}
-      <Modal
-        isOpen={isOpen && modalType === "reschedule"}
-        onClose={onClose}
-        size="md"
-        classNames={{
-          base: "glass-card border border-white/10",
-          header: "border-b border-white/10",
-          footer: "border-t border-white/10",
-        }}
-      >
-        <ModalContent>
-          <ModalHeader>
-            <h3 className="text-white font-bold">
-              Reschedule Appointment
-            </h3>
-          </ModalHeader>
-          <ModalBody>
-            <div className="flex flex-col gap-4 py-2">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-slate-400 text-sm font-medium">
-                  New Date
-                </label>
-                <input
-                  type="date"
-                  value={rescheduleData.appointmentDate}
-                  min={new Date().toISOString().split("T")[0]}
-                  onChange={(e) =>
-                    setRescheduleData((p) => ({
-                      ...p,
-                      appointmentDate: e.target.value,
-                    }))
-                  }
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-slate-200 text-sm focus:outline-none focus:border-cyan-500 hover:border-white/20 transition-all [color-scheme:dark]"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-slate-400 text-sm font-medium">
-                  New Time Slot
-                </label>
-                <Select
-                  placeholder="Select time"
-                  selectedKeys={
-                    rescheduleData.appointmentTime
-                      ? [rescheduleData.appointmentTime]
-                      : []
-                  }
-                  onSelectionChange={(keys) =>
-                    setRescheduleData((p) => ({
-                      ...p,
-                      appointmentTime: Array.from(keys)[0] || "",
-                    }))
-                  }
-                  classNames={{
-                    trigger:
-                      "bg-white/5 border border-white/10 hover:border-cyan-500/40 data-[focus=true]:border-cyan-500 transition-all",
-                    value: "text-slate-200 text-sm",
-                    listbox: "bg-[#0d1b2a]",
-                    popoverContent:
-                      "bg-[#0d1b2a] border border-white/10",
-                  }}
-                >
-                  {TIME_SLOTS.map((t) => (
-                    <SelectItem
-                      key={t}
-                      className="text-slate-300 hover:bg-white/5 data-[hover=true]:bg-white/5"
+      <Modal isOpen={isOpen && modalType === "reschedule"} onClose={onClose}>
+        <Modal.Backdrop>
+          <Modal.Container>
+            <Modal.Dialog>
+              <Modal.Header>
+                <Modal.Heading>Reschedule Appointment</Modal.Heading>
+              </Modal.Header>
+              <Modal.Body>
+                <div className="flex flex-col gap-4 py-2">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-slate-400 text-sm font-medium">
+                      New Date
+                    </label>
+                    <input
+                      type="date"
+                      value={rescheduleData.appointmentDate}
+                      min={new Date().toISOString().split("T")[0]}
+                      onChange={(e) =>
+                        setRescheduleData((p) => ({
+                          ...p,
+                          appointmentDate: e.target.value,
+                        }))
+                      }
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-slate-200 text-sm focus:outline-none focus:border-cyan-500 hover:border-white/20 transition-all [color-scheme:dark]"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-slate-400 text-sm font-medium">
+                      New Time Slot
+                    </label>
+                    <Select
+                      selectedKeys={
+                        rescheduleData.appointmentTime
+                          ? [rescheduleData.appointmentTime]
+                          : []
+                      }
+                      onSelectionChange={(keys) =>
+                        setRescheduleData((p) => ({
+                          ...p,
+                          appointmentTime: Array.from(keys)[0] || "",
+                        }))
+                      }
+                      classNames={{
+                        trigger:
+                          "bg-white/5 border border-white/10 hover:border-cyan-500/40 data-[focus=true]:border-cyan-500 transition-all",
+                        value: "text-slate-200 text-sm",
+                        popoverContent:
+                          "bg-[#0d1b2a] border border-white/10",
+                      }}
                     >
-                      {t}
-                    </SelectItem>
-                  ))}
-                </Select>
-              </div>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="bordered"
-              onPress={onClose}
-              className="border-white/15 text-slate-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              onPress={handleReschedule}
-              isLoading={actionLoading}
-              className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold"
-            >
-              Reschedule
-            </Button>
-          </ModalFooter>
-        </ModalContent>
+                      <Select.Trigger>
+                        <Select.Value placeholder="Select time" />
+                        <Select.Indicator />
+                      </Select.Trigger>
+                      <Select.Popover>
+                        <ListBox>
+                          {TIME_SLOTS.map((t) => (
+                            <ListBox.Item
+                              key={t}
+                              className="text-slate-300 hover:bg-white/5 data-[hover=true]:bg-white/5"
+                            >
+                              {t}
+                            </ListBox.Item>
+                          ))}
+                        </ListBox>
+                      </Select.Popover>
+                    </Select>
+                  </div>
+                </div>
+              </Modal.Body>
+              <Modal.Footer>
+                <Button
+                  variant="bordered"
+                  onPress={onClose}
+                  className="border-white/15 text-slate-300"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onPress={handleReschedule}
+                  isLoading={actionLoading}
+                  className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold"
+                >
+                  Reschedule
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
       </Modal>
     </div>
   );

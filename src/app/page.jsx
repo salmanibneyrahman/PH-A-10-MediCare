@@ -293,7 +293,7 @@ export default function HomePage() {
               {/* CTA Buttons */}
               <div className="flex flex-wrap gap-4">
                 <Button
-                  as={Link}
+                  as="a"
                   href="/find-doctors"
                   size="lg"
                   className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold px-8 shadow-xl shadow-cyan-500/25 hover:opacity-90 transition-opacity"
@@ -316,7 +316,7 @@ export default function HomePage() {
                   Find a Doctor
                 </Button>
                 <Button
-                  as={Link}
+                  as="a"
                   href="/about"
                   size="lg"
                   variant="bordered"
@@ -457,7 +457,7 @@ export default function HomePage() {
 
                   <Button
                     className="w-full bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold shadow-lg shadow-cyan-500/20"
-                    as={Link}
+                    as="a"
                     href="/find-doctors"
                   >
                     Book Now
@@ -643,7 +643,7 @@ export default function HomePage() {
               center={false}
             />
             <Button
-              as={Link}
+              as="a"
               href="/find-doctors"
               variant="bordered"
               className="border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 font-semibold shrink-0"
@@ -976,7 +976,7 @@ export default function HomePage() {
 
               <div className="flex flex-wrap gap-4 justify-center">
                 <Button
-                  as={Link}
+                  as="a"
                   href="/register"
                   size="lg"
                   className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold px-10 shadow-xl shadow-cyan-500/25 hover:opacity-90 transition-opacity"
@@ -984,7 +984,7 @@ export default function HomePage() {
                   Get Started Free
                 </Button>
                 <Button
-                  as={Link}
+                  as="a"
                   href="/find-doctors"
                   size="lg"
                   variant="bordered"

@@ -122,7 +122,7 @@ export default function DoctorDashboardPage() {
           </div>
         </div>
         <Button
-          as={Link}
+          as="a"
           href="/dashboard/doctor/schedule"
           className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold shadow-lg shadow-cyan-500/20 shrink-0"
         >
@@ -189,7 +189,7 @@ export default function DoctorDashboardPage() {
                 Today&apos;s Appointments
               </h2>
               <Button
-                as={Link}
+                as="a"
                 href="/dashboard/doctor/appointments"
                 size="sm"
                 variant="bordered"
