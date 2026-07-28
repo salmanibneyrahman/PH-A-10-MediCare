@@ -3,15 +3,9 @@
 import { useEffect, useState } from "react";
 import {
   Card,
-  CardBody,
   Button,
-  Textarea,
+  TextArea,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
   Avatar,
 } from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
@@ -29,7 +23,7 @@ import { toast } from "react-toastify";
 
 export default function PatientReviewsPage() {
   const { dbUser } = useAuth();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isOpen, setIsOpen] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [completedDoctors, setCompletedDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +38,9 @@ export default function PatientReviewsPage() {
     reviewText: "",
   });
   const [formErrors, setFormErrors] = useState({});
+
+  const onOpen = () => setIsOpen(true);
+  const onClose = () => setIsOpen(false);
 
   useEffect(() => {
     fetchData();
@@ -222,7 +219,7 @@ export default function PatientReviewsPage() {
 
       {reviews.length === 0 ? (
         <Card className="glass-card border border-white/10">
-          <CardBody className="p-16 flex flex-col items-center gap-4 text-center">
+          <Card.Content className="p-16 flex flex-col items-center gap-4 text-center">
             <div className="w-20 h-20 rounded-2xl bg-slate-800 flex items-center justify-center">
               <svg
                 className="w-10 h-10 text-slate-600"
@@ -256,7 +253,7 @@ export default function PatientReviewsPage() {
                 Write a Review
               </Button>
             )}
-          </CardBody>
+          </Card.Content>
         </Card>
       ) : (
         <div className="flex flex-col gap-4">
@@ -265,7 +262,7 @@ export default function PatientReviewsPage() {
               key={review._id}
               className="glass-card border border-white/10 hover:border-white/15 transition-all"
             >
-              <CardBody className="p-6">
+              <Card.Content className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center shrink-0">
                     <span className="text-white font-bold text-lg">
@@ -318,7 +315,7 @@ export default function PatientReviewsPage() {
                     </p>
                   </div>
                 </div>
-              </CardBody>
+              </Card.Content>
             </Card>
           ))}
         </div>
@@ -330,108 +327,101 @@ export default function PatientReviewsPage() {
           isOpen && (modalType === "add" || modalType === "edit")
         }
         onClose={onClose}
-        size="lg"
-        classNames={{
-          base: "glass-card border border-white/10",
-          header: "border-b border-white/10",
-          body: "py-6",
-          footer: "border-t border-white/10",
-        }}
       >
-        <ModalContent>
-          <ModalHeader>
-            <h3 className="text-white font-bold text-lg">
-              {modalType === "add" ? "Write a Review" : "Edit Review"}
-            </h3>
-          </ModalHeader>
-          <ModalBody>
-            <div className="flex flex-col gap-5">
-              {modalType === "add" && (
-                <div className="flex flex-col gap-2">
-                  <label className="text-slate-400 text-sm font-medium">
-                    Select Doctor
-                  </label>
-                  {completedDoctors.length === 0 ? (
-                    <p className="text-slate-500 text-sm p-3 rounded-xl bg-white/5 border border-white/5">
-                      No completed appointments found.
-                    </p>
-                  ) : (
+        <Modal.Backdrop>
+          <Modal.Container>
+            <Modal.Dialog>
+              <Modal.Header>
+                <Modal.Heading>
+                  {modalType === "add" ? "Write a Review" : "Edit Review"}
+                </Modal.Heading>
+              </Modal.Header>
+              <Modal.Body>
+                <div className="flex flex-col gap-5">
+                  {modalType === "add" && (
                     <div className="flex flex-col gap-2">
-                      {completedDoctors.map((doc) => (
-                        <button
-                          key={doc.doctorId}
-                          type="button"
-                          onClick={() =>
-                            setFormData((p) => ({
-                              ...p,
-                              doctorId: doc.doctorId,
-                              doctorName: doc.doctorName,
-                              appointmentId: doc.appointmentId,
-                            }))
-                          }
-                          className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
-                            formData.doctorId === doc.doctorId
-                              ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-400"
-                              : "bg-white/5 border-white/10 text-slate-300 hover:border-white/20"
-                          }`}
-                        >
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-indigo-600/20 flex items-center justify-center shrink-0">
-                            <span className="text-cyan-400 font-bold text-sm">
-                              {(doc.doctorName || "D")[0]}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-semibold text-sm">
-                              {doc.doctorName}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              {doc.specialization}
-                            </p>
-                          </div>
-                          {formData.doctorId === doc.doctorId && (
-                            <svg
-                              className="w-5 h-5 text-cyan-400 ml-auto"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                      <label className="text-slate-400 text-sm font-medium">
+                        Select Doctor
+                      </label>
+                      {completedDoctors.length === 0 ? (
+                        <p className="text-slate-500 text-sm p-3 rounded-xl bg-white/5 border border-white/5">
+                          No completed appointments found.
+                        </p>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          {completedDoctors.map((doc) => (
+                            <button
+                              key={doc.doctorId}
+                              type="button"
+                              onClick={() =>
+                                setFormData((p) => ({
+                                  ...p,
+                                  doctorId: doc.doctorId,
+                                  doctorName: doc.doctorName,
+                                  appointmentId: doc.appointmentId,
+                                }))
+                              }
+                              className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${formData.doctorId === doc.doctorId
+                                ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-400"
+                                : "bg-white/5 border-white/10 text-slate-300 hover:border-white/20"
+                                }`}
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          )}
-                        </button>
-                      ))}
+                              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-indigo-600/20 flex items-center justify-center shrink-0">
+                                <span className="text-cyan-400 font-bold text-sm">
+                                  {(doc.doctorName || "D")[0]}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="font-semibold text-sm">
+                                  {doc.doctorName}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {doc.specialization}
+                                </p>
+                              </div>
+                              {formData.doctorId === doc.doctorId && (
+                                <svg
+                                  className="w-5 h-5 text-cyan-400 ml-auto"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {formErrors.doctorId && (
+                        <p className="text-red-400 text-xs">
+                          {formErrors.doctorId}
+                        </p>
+                      )}
                     </div>
                   )}
-                  {formErrors.doctorId && (
-                    <p className="text-red-400 text-xs">
-                      {formErrors.doctorId}
-                    </p>
-                  )}
-                </div>
-              )}
 
-              <div className="flex flex-col gap-2">
-                <label className="text-slate-400 text-sm font-medium">
-                  Your Rating
-                </label>
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
-                  <StarRating
-                    rating={formData.rating}
-                    size="lg"
-                    interactive
-                    onRate={(r) =>
-                      setFormData((p) => ({ ...p, rating: r }))
-                    }
-                  />
-                  <span className="text-slate-300 text-sm font-medium">
-                    {formData.rating > 0
-                      ? `${formData.rating}/5 — ${
-                          [
+                  <div className="flex flex-col gap-2">
+                    <label className="text-slate-400 text-sm font-medium">
+                      Your Rating
+                    </label>
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
+                      <StarRating
+                        rating={formData.rating}
+                        size="lg"
+                        interactive
+                        onRate={(r) =>
+                          setFormData((p) => ({ ...p, rating: r }))
+                        }
+                      />
+                      <span className="text-slate-300 text-sm font-medium">
+                        {formData.rating > 0
+                          ? `${formData.rating}/5 — ${[
                             "",
                             "Poor",
                             "Fair",
@@ -439,105 +429,105 @@ export default function PatientReviewsPage() {
                             "Very Good",
                             "Excellent",
                           ][formData.rating]
-                        }`
-                      : "Click to rate"}
-                  </span>
-                </div>
-                {formErrors.rating && (
-                  <p className="text-red-400 text-xs">
-                    {formErrors.rating}
-                  </p>
-                )}
-              </div>
+                          }`
+                          : "Click to rate"}
+                      </span>
+                    </div>
+                    {formErrors.rating && (
+                      <p className="text-red-400 text-xs">
+                        {formErrors.rating}
+                      </p>
+                    )}
+                  </div>
 
-              <Textarea
-                label="Your Review"
-                placeholder="Share your experience with this doctor..."
-                value={formData.reviewText}
-                onValueChange={(val) => {
-                  setFormData((p) => ({ ...p, reviewText: val }));
-                  if (formErrors.reviewText)
-                    setFormErrors((p) => ({
-                      ...p,
-                      reviewText: "",
-                    }));
-                }}
-                isInvalid={!!formErrors.reviewText}
-                errorMessage={formErrors.reviewText}
-                minRows={4}
-                classNames={{
-                  inputWrapper:
-                    "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all data-[invalid=true]:border-red-500/60",
-                  input:
-                    "text-slate-200 placeholder:text-slate-500 text-sm",
-                  label: "text-slate-400 text-sm",
-                  errorMessage: "text-red-400 text-xs",
-                }}
-              />
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="bordered"
-              onPress={onClose}
-              className="border-white/15 text-slate-300 hover:bg-white/5"
-            >
-              Cancel
-            </Button>
-            <Button
-              onPress={modalType === "add" ? handleAdd : handleEdit}
-              isLoading={actionLoading}
-              className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold shadow-lg shadow-cyan-500/20"
-            >
-              {modalType === "add"
-                ? "Submit Review"
-                : "Update Review"}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
+                  <TextArea
+                    label="Your Review"
+                    placeholder="Share your experience with this doctor..."
+                    value={formData.reviewText}
+                    onValueChange={(val) => {
+                      setFormData((p) => ({ ...p, reviewText: val }));
+                      if (formErrors.reviewText)
+                        setFormErrors((p) => ({
+                          ...p,
+                          reviewText: "",
+                        }));
+                    }}
+                    isInvalid={!!formErrors.reviewText}
+                    errorMessage={formErrors.reviewText}
+                    minRows={4}
+                    classNames={{
+                      inputWrapper:
+                        "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all data-[invalid=true]:border-red-500/60",
+                      input:
+                        "text-slate-200 placeholder:text-slate-500 text-sm",
+                      label: "text-slate-400 text-sm",
+                      errorMessage: "text-red-400 text-xs",
+                    }}
+                  />
+                </div>
+              </Modal.Body>
+              <Modal.Footer>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-xl border border-white/15 text-slate-300 text-sm font-semibold transition-all hover:bg-white/5 active:scale-95"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={modalType === "add" ? handleAdd : handleEdit}
+                  disabled={actionLoading}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                >
+                  {actionLoading ? "Submitting..." : modalType === "add" ? "Submit Review" : "Update Review"}
+                </button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
       </Modal>
 
       {/* Delete Modal */}
       <Modal
         isOpen={isOpen && modalType === "delete"}
         onClose={onClose}
-        size="sm"
-        classNames={{
-          base: "glass-card border border-white/10",
-          header: "border-b border-white/10",
-          footer: "border-t border-white/10",
-        }}
       >
-        <ModalContent>
-          <ModalHeader>
-            <h3 className="text-white font-bold">Delete Review</h3>
-          </ModalHeader>
-          <ModalBody>
-            <p className="text-slate-400 text-sm py-2">
-              Are you sure you want to delete your review for{" "}
-              <span className="text-white font-semibold">
-                {selectedReview?.doctorName}
-              </span>
-              ? This action cannot be undone.
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="bordered"
-              onPress={onClose}
-              className="border-white/15 text-slate-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              onPress={handleDelete}
-              isLoading={actionLoading}
-              className="bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold"
-            >
-              Delete Review
-            </Button>
-          </ModalFooter>
-        </ModalContent>
+        <Modal.Backdrop>
+          <Modal.Container>
+            <Modal.Dialog>
+              <Modal.Header>
+                <Modal.Heading>Delete Review</Modal.Heading>
+              </Modal.Header>
+              <Modal.Body>
+                <p className="text-slate-400 text-sm py-2">
+                  Are you sure you want to delete your review for{" "}
+                  <span className="text-white font-semibold">
+                    {selectedReview?.doctorName}
+                  </span>
+                  ? This action cannot be undone.
+                </p>
+              </Modal.Body>
+              <Modal.Footer>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-xl border border-white/15 text-slate-300 text-sm font-semibold transition-all hover:bg-white/5 active:scale-95"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={actionLoading}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                >
+                  {actionLoading ? "Deleting..." : "Delete Review"}
+                </button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
       </Modal>
     </div>
   );

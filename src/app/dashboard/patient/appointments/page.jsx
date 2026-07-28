@@ -128,8 +128,8 @@ export default function PatientAppointmentsPage() {
     activeFilter === "all"
       ? appointments
       : appointments.filter(
-          (a) => a.appointmentStatus === activeFilter
-        );
+        (a) => a.appointmentStatus === activeFilter
+      );
 
   if (loading)
     return <LoadingSpinner text="Loading your appointments..." />;
@@ -159,11 +159,10 @@ export default function PatientAppointmentsPage() {
           <button
             key={f}
             onClick={() => setActiveFilter(f)}
-            className={`flex-1 min-w-fit px-4 py-2 rounded-lg text-xs font-semibold capitalize transition-all whitespace-nowrap ${
-              activeFilter === f
-                ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-lg"
-                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-            }`}
+            className={`flex-1 min-w-fit px-4 py-2 rounded-lg text-xs font-semibold capitalize transition-all whitespace-nowrap ${activeFilter === f
+              ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-lg"
+              : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              }`}
           >
             {f === "all"
               ? `All (${appointments.length})`
@@ -309,25 +308,25 @@ export default function PatientAppointmentsPage() {
                     </div>
                     {(apt.appointmentStatus === "pending" ||
                       apt.appointmentStatus === "confirmed") && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="bordered"
-                          className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs"
-                          onClick={() => openModal(apt, "reschedule")}
-                        >
-                          Reschedule
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="bordered"
-                          className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
-                          onClick={() => openModal(apt, "cancel")}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    )}
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="bordered"
+                            className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs"
+                            onClick={() => openModal(apt, "reschedule")}
+                          >
+                            Reschedule
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="bordered"
+                            className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
+                            onClick={() => openModal(apt, "cancel")}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
                     {apt.appointmentStatus === "completed" && (
                       <Button
                         size="sm"
@@ -364,20 +363,21 @@ export default function PatientAppointmentsPage() {
                 </p>
               </Modal.Body>
               <Modal.Footer>
-                <Button
-                  variant="bordered"
-                  onPress={onClose}
-                  className="border-white/15 text-slate-300"
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-xl border border-white/15 text-slate-300 text-sm font-semibold transition-all hover:bg-white/5 active:scale-95"
                 >
                   Keep Appointment
-                </Button>
-                <Button
-                  onPress={handleCancel}
-                  isLoading={actionLoading}
-                  className="bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold"
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={actionLoading}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
                 >
-                  Yes, Cancel
-                </Button>
+                  {actionLoading ? "Cancelling..." : "Yes, Cancel"}
+                </button>
               </Modal.Footer>
             </Modal.Dialog>
           </Modal.Container>
@@ -401,7 +401,7 @@ export default function PatientAppointmentsPage() {
                     <input
                       type="date"
                       value={rescheduleData.appointmentDate}
-                      min={new Date().toISOString().split("T")[0]}
+                      min={new Date().toISOString().split("T")}
                       onChange={(e) =>
                         setRescheduleData((p) => ({
                           ...p,
@@ -424,7 +424,7 @@ export default function PatientAppointmentsPage() {
                       onSelectionChange={(keys) =>
                         setRescheduleData((p) => ({
                           ...p,
-                          appointmentTime: Array.from(keys)[0] || "",
+                          appointmentTime: Array.from(keys) || "",
                         }))
                       }
                       classNames={{
@@ -456,20 +456,21 @@ export default function PatientAppointmentsPage() {
                 </div>
               </Modal.Body>
               <Modal.Footer>
-                <Button
-                  variant="bordered"
-                  onPress={onClose}
-                  className="border-white/15 text-slate-300"
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-xl border border-white/15 text-slate-300 text-sm font-semibold transition-all hover:bg-white/5 active:scale-95"
                 >
                   Cancel
-                </Button>
-                <Button
-                  onPress={handleReschedule}
-                  isLoading={actionLoading}
-                  className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold"
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReschedule}
+                  disabled={actionLoading}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
                 >
-                  Reschedule
-                </Button>
+                  {actionLoading ? "Rescheduling..." : "Reschedule"}
+                </button>
               </Modal.Footer>
             </Modal.Dialog>
           </Modal.Container>

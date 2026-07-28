@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardBody } from "@heroui/react";
+import { Card } from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
 import { getPatientPayments } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -77,7 +77,7 @@ export default function PatientPaymentsPage() {
             key={card.label}
             className="glass-card border border-white/10"
           >
-            <CardBody className="p-5 flex flex-col gap-3">
+            <Card.Content className="p-5 flex flex-col gap-3">
               <div
                 className={`w-11 h-11 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center shadow-lg`}
               >
@@ -101,14 +101,14 @@ export default function PatientPaymentsPage() {
                 </p>
                 <p className="text-slate-400 text-sm">{card.label}</p>
               </div>
-            </CardBody>
+            </Card.Content>
           </Card>
         ))}
       </div>
 
       {/* Payments Table */}
       <Card className="glass-card border border-white/10">
-        <CardBody className="p-0">
+        <Card.Content className="p-0">
           {payments.length === 0 ? (
             <div className="flex flex-col items-center gap-4 py-16 text-center">
               <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center">
@@ -192,7 +192,7 @@ export default function PatientPaymentsPage() {
               </table>
             </div>
           )}
-        </CardBody>
+        </Card.Content>
       </Card>
     </div>
   );
