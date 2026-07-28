@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@heroui/react";
+import { useRouter } from "next/navigation";
 
 export default function NotFound() {
+    const router = useRouter();
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#0a0f1e] animated-bg px-4">
             <div className="text-center max-w-lg mx-auto">
@@ -40,16 +44,14 @@ export default function NotFound() {
 
                     <div className="flex gap-3 flex-wrap justify-center">
                         <Button
-                            as="a"
-                            href="/"
+                            onPress={() => router.push("/")}
                             className="bg-gradient-to-r from-cyan-500 to-indigo-500 text-white font-semibold px-8"
                             size="lg"
                         >
                             Back to Home
                         </Button>
                         <Button
-                            as="a"
-                            href="/find-doctors"
+                            onPress={() => router.push("/find-doctors")}
                             variant="bordered"
                             className="border-cyan-500/50 text-cyan-400 font-semibold px-8"
                             size="lg"

@@ -9,6 +9,7 @@ import DoctorCard from "@/components/DoctorCard";
 import StarRating from "@/components/StarRating";
 import SectionHeading from "@/components/SectionHeading";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useRouter } from "next/navigation";
 
 // Simple animation hook
 function useInView(threshold = 0.1) {
@@ -178,6 +179,7 @@ export default function HomePage() {
   const [doctorsLoading, setDoctorsLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const router = useRouter();
 
   const [heroRef, heroInView] = useInView(0.1);
   const [statsRef, statsInView] = useInView(0.1);
@@ -293,53 +295,26 @@ export default function HomePage() {
               {/* CTA Buttons */}
               <div className="flex flex-wrap gap-4">
                 <Button
-                  as="a"
-                  href="/find-doctors"
+                  onPress={() => router.push("/find-doctors")}
                   size="lg"
                   className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold px-8 shadow-xl shadow-cyan-500/25 hover:opacity-90 transition-opacity"
                   startContent={
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   }
                 >
                   Find a Doctor
                 </Button>
                 <Button
-                  as="a"
-                  href="/about"
+                  onPress={() => router.push("/about")}
                   size="lg"
                   variant="bordered"
                   className="border-white/20 text-slate-300 hover:border-cyan-500/50 hover:text-cyan-400 font-semibold px-8 transition-all"
                   startContent={
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   }
                 >
@@ -443,11 +418,10 @@ export default function HomePage() {
                           {doc.time}
                         </p>
                         <span
-                          className={`text-xs ${
-                            doc.available
-                              ? "text-emerald-400"
-                              : "text-slate-500"
-                          }`}
+                          className={`text-xs ${doc.available
+                            ? "text-emerald-400"
+                            : "text-slate-500"
+                            }`}
                         >
                           {doc.available ? "Available" : "Booked"}
                         </span>
@@ -457,8 +431,7 @@ export default function HomePage() {
 
                   <Button
                     className="w-full bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold shadow-lg shadow-cyan-500/20"
-                    as="a"
-                    href="/find-doctors"
+                    onPress={() => router.push("/find-doctors")}
                   >
                     Book Now
                   </Button>
@@ -643,23 +616,12 @@ export default function HomePage() {
               center={false}
             />
             <Button
-              as="a"
-              href="/find-doctors"
+              onPress={() => router.push("/find-doctors")}
               variant="bordered"
               className="border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 font-semibold shrink-0"
               endContent={
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                  />
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               }
             >
@@ -976,16 +938,14 @@ export default function HomePage() {
 
               <div className="flex flex-wrap gap-4 justify-center">
                 <Button
-                  as="a"
-                  href="/register"
+                  onPress={() => router.push("/register")}
                   size="lg"
                   className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold px-10 shadow-xl shadow-cyan-500/25 hover:opacity-90 transition-opacity"
                 >
                   Get Started Free
                 </Button>
                 <Button
-                  as="a"
-                  href="/find-doctors"
+                  onPress={() => router.push("/find-doctors")}
                   size="lg"
                   variant="bordered"
                   className="border-white/20 text-slate-300 hover:border-cyan-500/50 hover:text-cyan-400 font-semibold px-10 transition-all"

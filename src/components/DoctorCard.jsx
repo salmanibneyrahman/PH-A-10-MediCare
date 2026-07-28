@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Card, Button, Chip, Avatar } from "@heroui/react";
 import StarRating from "./StarRating";
+import { useRouter } from "next/navigation";
 
 export default function DoctorCard({ doctor }) {
     const {
@@ -17,6 +18,7 @@ export default function DoctorCard({ doctor }) {
         totalReviews,
         availableDays,
     } = doctor;
+    const router = useRouter();
 
     return (
         <Card className="glass-card border border-white/10 hover:border-cyan-500/30 transition-all duration-300 hover-lift overflow-hidden group">
@@ -150,8 +152,7 @@ export default function DoctorCard({ doctor }) {
 
                     {/* Action Button */}
                     <Button
-                        as="a"
-                        href={`/find-doctors/${_id}`}
+                        onPress={() => router.push(`/find-doctors/${_id}`)}
                         className="w-full bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold shadow-lg shadow-cyan-500/20 hover:opacity-90 transition-opacity"
                         size="sm"
                     >

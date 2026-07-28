@@ -19,6 +19,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { useRouter } from "next/navigation";
 
 const MONTH_NAMES = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -46,6 +47,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function AdminDashboardPage() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchAnalytics() {
@@ -142,16 +144,14 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex gap-3 flex-wrap">
             <Button
-              as="a"
-              href="/dashboard/admin/doctors"
+              onPress={() => router.push("/dashboard/admin/doctors")}
               size="sm"
               className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold shadow-lg shadow-cyan-500/20"
             >
               Verify Doctors
             </Button>
             <Button
-              as="a"
-              href="/dashboard/admin/analytics"
+              onPress={() => router.push("/dashboard/admin/analytics")}
               size="sm"
               variant="bordered"
               className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
@@ -319,8 +319,7 @@ export default function AdminDashboardPage() {
               Doctor Performance (Rating Based)
             </h3>
             <Button
-              as="a"
-              href="/dashboard/admin/analytics"
+              onPress={() => router.push("/dashboard/admin/analytics")}
               size="sm"
               variant="bordered"
               className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs"

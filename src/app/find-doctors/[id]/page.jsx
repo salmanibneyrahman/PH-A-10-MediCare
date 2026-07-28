@@ -31,6 +31,7 @@ import StarRating from "@/components/StarRating";
 import StatusBadge from "@/components/StatusBadge";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 export default function DoctorDetailsPage() {
   const { id } = useParams();
@@ -52,6 +53,7 @@ export default function DoctorDetailsPage() {
     symptoms: "",
   });
   const [bookingErrors, setBookingErrors] = useState({});
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchData() {
@@ -179,8 +181,7 @@ export default function DoctorDetailsPage() {
             Doctor not found
           </h2>
           <Button
-            as="a"
-            href="/find-doctors"
+            onPress={() => router.push("/find-doctors")}
             className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold"
           >
             Back to Doctors
@@ -357,11 +358,10 @@ export default function DoctorDetailsPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 min-w-fit px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
-                activeTab === tab.key
-                  ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-lg shadow-cyan-500/20"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-              }`}
+              className={`flex-1 min-w-fit px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap ${activeTab === tab.key
+                ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-lg shadow-cyan-500/20"
+                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                }`}
             >
               {tab.label}
             </button>
@@ -398,8 +398,8 @@ export default function DoctorDetailsPage() {
                         {(Array.isArray(doctor.qualifications)
                           ? doctor.qualifications
                           : doctor.qualifications
-                              ?.split(",")
-                              .map((q) => q.trim()) || []
+                            ?.split(",")
+                            .map((q) => q.trim()) || []
                         ).map((q, i) => (
                           <Chip
                             key={i}
@@ -461,11 +461,10 @@ export default function DoctorDetailsPage() {
                           return (
                             <div
                               key={day}
-                              className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
-                                isAvailable
-                                  ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                                  : "bg-white/5 text-slate-600 border-white/5"
-                              }`}
+                              className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${isAvailable
+                                ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                                : "bg-white/5 text-slate-600 border-white/5"
+                                }`}
                             >
                               {day}
                             </div>
@@ -606,8 +605,7 @@ export default function DoctorDetailsPage() {
                         </p>
                       </div>
                       <Button
-                        as="a"
-                        href="/login"
+                        onPress={() => router.push("/login")}
                         className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold"
                       >
                         Sign In to Book
@@ -666,12 +664,11 @@ export default function DoctorDetailsPage() {
                                       appointmentTime: "",
                                     }));
                                 }}
-                                className={`px-3 py-2.5 rounded-xl text-sm font-medium border transition-all ${
-                                  bookingData.appointmentTime ===
+                                className={`px-3 py-2.5 rounded-xl text-sm font-medium border transition-all ${bookingData.appointmentTime ===
                                   slot
-                                    ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/50 shadow-lg shadow-cyan-500/10"
-                                    : "bg-white/5 text-slate-400 border-white/10 hover:border-cyan-500/30 hover:text-cyan-400"
-                                }`}
+                                  ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/50 shadow-lg shadow-cyan-500/10"
+                                  : "bg-white/5 text-slate-400 border-white/10 hover:border-cyan-500/30 hover:text-cyan-400"
+                                  }`}
                               >
                                 {slot}
                               </button>
@@ -924,13 +921,13 @@ export default function DoctorDetailsPage() {
                     label: "Date",
                     value: bookingData.appointmentDate
                       ? new Date(
-                          bookingData.appointmentDate
-                        ).toLocaleDateString("en-US", {
-                          weekday: "long",
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })
+                        bookingData.appointmentDate
+                      ).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
                       : "—",
                   },
                   {

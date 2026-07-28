@@ -12,6 +12,7 @@ import {
 import StatusBadge from "@/components/StatusBadge";
 import StarRating from "@/components/StarRating";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useRouter } from "next/navigation";
 
 export default function DoctorDashboardPage() {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ export default function DoctorDashboardPage() {
   const [appointments, setAppointments] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchData() {
@@ -122,8 +124,7 @@ export default function DoctorDashboardPage() {
           </div>
         </div>
         <Button
-          as="a"
-          href="/dashboard/doctor/schedule"
+          onPress={() => router.push("/dashboard/doctor/schedule")}
           className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold shadow-lg shadow-cyan-500/20 shrink-0"
         >
           Manage Schedule
@@ -189,8 +190,7 @@ export default function DoctorDashboardPage() {
                 Today&apos;s Appointments
               </h2>
               <Button
-                as="a"
-                href="/dashboard/doctor/appointments"
+                onPress={() => router.push("/dashboard/doctor/appointments")}
                 size="sm"
                 variant="bordered"
                 className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs"
