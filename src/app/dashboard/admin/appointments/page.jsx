@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardBody, Input } from "@heroui/react";
+import { useEffect, useState, useCallback } from "react";
+import { Card, TextField, Label, Input } from "@heroui/react";
 import { getAllAppointments } from "@/lib/api";
 import StatusBadge from "@/components/StatusBadge";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -36,14 +36,17 @@ export default function AdminAppointmentsPage() {
       result = result.filter((a) => a.appointmentStatus === activeFilter);
     }
     if (search.trim()) {
+      const q = search.toLowerCase();
       result = result.filter(
         (a) =>
-          a.patient?.name?.toLowerCase().includes(search.toLowerCase()) ||
-          a.doctor?.doctorName?.toLowerCase().includes(search.toLowerCase())
+          a.patient?.name?.toLowerCase().includes(q) ||
+          a.doctor?.doctorName?.toLowerCase().includes(q)
       );
     }
     setFiltered(result);
   }, [search, appointments, activeFilter]);
+
+  const handleSearchChange = useCallback((value) => setSearch(value), []);
 
   const statusFilters = ["all", "pending", "confirmed", "completed", "cancelled"];
 
@@ -62,18 +65,16 @@ export default function AdminAppointmentsPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <Input
-          placeholder="Search by patient or doctor name..."
+        <TextField
+          name="search"
           value={search}
-          onValueChange={setSearch}
-          classNames={{
-            inputWrapper:
-              "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all",
-            input: "text-slate-200 placeholder:text-slate-500 text-sm",
-          }}
-          startContent={
+          onChange={handleSearchChange}
+          className="w-full"
+        >
+          <Label className="sr-only">Search appointments</Label>
+          <div className="relative w-full">
             <svg
-              className="w-4 h-4 text-slate-500 shrink-0"
+              className="w-4 h-4 text-slate-500 shrink-0 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -85,18 +86,22 @@ export default function AdminAppointmentsPage() {
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
-          }
-        />
+            <Input
+              placeholder="Search by patient or doctor name..."
+              className="w-full h-10 pl-9 pr-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none"
+            />
+          </div>
+        </TextField>
         <div className="flex gap-1 p-1 rounded-xl glass-card border border-white/10 overflow-x-auto shrink-0">
           {statusFilters.map((f) => (
             <button
               key={f}
+              type="button"
               onClick={() => setActiveFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all whitespace-nowrap ${
-                activeFilter === f
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all whitespace-nowrap ${activeFilter === f
                   ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-              }`}
+                }`}
             >
               {f === "all"
                 ? `All (${appointments.length})`
@@ -108,7 +113,7 @@ export default function AdminAppointmentsPage() {
 
       {/* Table */}
       <Card className="glass-card border border-white/10">
-        <CardBody className="p-0">
+        <Card.Content className="p-0">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center gap-4 py-16 text-center">
               <svg
@@ -189,7 +194,7 @@ export default function AdminAppointmentsPage() {
               </table>
             </div>
           )}
-        </CardBody>
+        </Card.Content>
       </Card>
     </div>
   );

@@ -1,19 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Card,
-  CardBody,
   Button,
   Avatar,
+  TextField,
+  Label,
   Input,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
-  Chip,
 } from "@heroui/react";
 import { getUsers, deleteUser, updateUserStatus } from "@/lib/api";
 import StatusBadge from "@/components/StatusBadge";
@@ -21,7 +16,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { toast } from "react-toastify";
 
 export default function AdminUsersPage() {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isOpen, setIsOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,10 +36,11 @@ export default function AdminUsersPage() {
       result = result.filter((u) => u.role === activeRole);
     }
     if (search.trim()) {
+      const q = search.toLowerCase();
       result = result.filter(
         (u) =>
-          u.name?.toLowerCase().includes(search.toLowerCase()) ||
-          u.email?.toLowerCase().includes(search.toLowerCase())
+          u.name?.toLowerCase().includes(q) ||
+          u.email?.toLowerCase().includes(q)
       );
     }
     setFiltered(result);
@@ -63,11 +59,15 @@ export default function AdminUsersPage() {
     }
   }
 
+  const onClose = useCallback(() => setIsOpen(false), []);
+
   const openModal = (user, type) => {
     setSelectedUser(user);
     setModalType(type);
-    onOpen();
+    setIsOpen(true);
   };
+
+  const handleSearchChange = useCallback((value) => setSearch(value), []);
 
   const handleDelete = async () => {
     setActionLoading(true);
@@ -130,18 +130,16 @@ export default function AdminUsersPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <Input
-          placeholder="Search by name or email..."
+        <TextField
+          name="search"
           value={search}
-          onValueChange={setSearch}
-          classNames={{
-            inputWrapper:
-              "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all",
-            input: "text-slate-200 placeholder:text-slate-500 text-sm",
-          }}
-          startContent={
+          onChange={handleSearchChange}
+          className="w-full"
+        >
+          <Label className="sr-only">Search users</Label>
+          <div className="relative w-full">
             <svg
-              className="w-4 h-4 text-slate-500 shrink-0"
+              className="w-4 h-4 text-slate-500 shrink-0 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -153,18 +151,23 @@ export default function AdminUsersPage() {
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
-          }
-        />
+            <Input
+              placeholder="Search by name or email..."
+              className="w-full h-10 pl-9 pr-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none"
+            />
+          </div>
+        </TextField>
+
         <div className="flex gap-1 p-1 rounded-xl glass-card border border-white/10 shrink-0">
           {roleFilters.map((role) => (
             <button
               key={role}
+              type="button"
               onClick={() => setActiveRole(role)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
-                activeRole === role
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${activeRole === role
                   ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-              }`}
+                }`}
             >
               {role}
             </button>
@@ -174,7 +177,7 @@ export default function AdminUsersPage() {
 
       {/* Users Table */}
       <Card className="glass-card border border-white/10">
-        <CardBody className="p-0">
+        <Card.Content className="p-0">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center gap-4 py-16 text-center">
               <svg
@@ -209,15 +212,15 @@ export default function AdminUsersPage() {
                     <tr key={u._id}>
                       <td>
                         <div className="flex items-center gap-3">
-                          <Avatar
-                            src={u.image || u.photo || ""}
-                            name={u.name || "U"}
-                            size="sm"
-                            classNames={{
-                              base: "bg-gradient-to-br from-indigo-500 to-purple-600 shrink-0",
-                              name: "text-white font-bold text-xs",
-                            }}
-                          />
+                          <Avatar size="sm" className="shrink-0">
+                            <Avatar.Image
+                              src={u.photo || u.image || ""}
+                              alt={u.name || "User"}
+                            />
+                            <Avatar.Fallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs">
+                              {u.name?.[0]?.toUpperCase() || "U"}
+                            </Avatar.Fallback>
+                          </Avatar>
                           <div className="min-w-0">
                             <p className="text-white font-semibold text-sm truncate">
                               {u.name}
@@ -230,9 +233,8 @@ export default function AdminUsersPage() {
                       </td>
                       <td>
                         <span
-                          className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${
-                            roleColors[u.role] || roleColors.patient
-                          }`}
+                          className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${roleColors[u.role] || roleColors.patient
+                            }`}
                         >
                           {u.role || "patient"}
                         </span>
@@ -242,31 +244,29 @@ export default function AdminUsersPage() {
                       </td>
                       <td className="text-slate-400 text-sm">
                         {u.createdAt
-                          ? new Date(u.createdAt).toLocaleDateString(
-                              "en-US",
-                              { month: "short", day: "numeric", year: "numeric" }
-                            )
+                          ? new Date(u.createdAt).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
                           : "—"}
                       </td>
                       <td>
                         <div className="flex items-center gap-2">
                           <Button
                             size="sm"
-                            variant="bordered"
-                            onClick={() => openModal(u, "suspend")}
-                            className={`text-xs ${
-                              u.status === "suspended"
+                            onPress={() => openModal(u, "suspend")}
+                            className={`text-xs h-8 px-3 rounded-lg bg-transparent border ${u.status === "suspended"
                                 ? "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
                                 : "border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
-                            }`}
+                              }`}
                           >
                             {u.status === "suspended" ? "Activate" : "Suspend"}
                           </Button>
                           <Button
                             size="sm"
-                            variant="bordered"
-                            onClick={() => openModal(u, "delete")}
-                            className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
+                            onPress={() => openModal(u, "delete")}
+                            className="text-xs h-8 px-3 rounded-lg bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10"
                           >
                             Delete
                           </Button>
@@ -278,106 +278,103 @@ export default function AdminUsersPage() {
               </table>
             </div>
           )}
-        </CardBody>
+        </Card.Content>
       </Card>
 
       {/* Delete Modal */}
-      <Modal
-        isOpen={isOpen && modalType === "delete"}
-        onClose={onClose}
-        size="sm"
-        classNames={{
-          base: "glass-card border border-white/10",
-          header: "border-b border-white/10",
-          footer: "border-t border-white/10",
-        }}
-      >
-        <ModalContent>
-          <ModalHeader>
-            <h3 className="text-white font-bold">Delete User</h3>
-          </ModalHeader>
-          <ModalBody>
-            <p className="text-slate-400 text-sm py-2">
-              Are you sure you want to permanently delete{" "}
-              <span className="text-white font-semibold">
-                {selectedUser?.name}
-              </span>
-              ? This action cannot be undone.
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="bordered"
-              onPress={onClose}
-              className="border-white/15 text-slate-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              onPress={handleDelete}
-              isLoading={actionLoading}
-              className="bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold"
-            >
-              Delete User
-            </Button>
-          </ModalFooter>
-        </ModalContent>
+      <Modal>
+        <Modal.Backdrop
+          isOpen={isOpen && modalType === "delete"}
+          onOpenChange={setIsOpen}
+        >
+          <Modal.Container size="sm">
+            <Modal.Dialog className="glass-card border border-white/10">
+              <Modal.Header className="border-b border-white/10">
+                <Modal.Heading className="text-white font-bold">
+                  Delete User
+                </Modal.Heading>
+              </Modal.Header>
+              <Modal.Body>
+                <p className="text-slate-400 text-sm py-2">
+                  Are you sure you want to permanently delete{" "}
+                  <span className="text-white font-semibold">
+                    {selectedUser?.name}
+                  </span>
+                  ? This action cannot be undone.
+                </p>
+              </Modal.Body>
+              <Modal.Footer className="border-t border-white/10">
+                <Button
+                  onPress={onClose}
+                  className="bg-transparent border border-white/15 text-slate-300 h-9 px-4 rounded-lg"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onPress={handleDelete}
+                  isPending={actionLoading}
+                  className="bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold h-9 px-4 rounded-lg"
+                >
+                  Delete User
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
       </Modal>
 
       {/* Suspend Modal */}
-      <Modal
-        isOpen={isOpen && modalType === "suspend"}
-        onClose={onClose}
-        size="sm"
-        classNames={{
-          base: "glass-card border border-white/10",
-          header: "border-b border-white/10",
-          footer: "border-t border-white/10",
-        }}
-      >
-        <ModalContent>
-          <ModalHeader>
-            <h3 className="text-white font-bold">
-              {selectedUser?.status === "suspended"
-                ? "Activate User"
-                : "Suspend User"}
-            </h3>
-          </ModalHeader>
-          <ModalBody>
-            <p className="text-slate-400 text-sm py-2">
-              Are you sure you want to{" "}
-              {selectedUser?.status === "suspended" ? "activate" : "suspend"}{" "}
-              <span className="text-white font-semibold">
-                {selectedUser?.name}
-              </span>
-              ?{" "}
-              {selectedUser?.status !== "suspended" &&
-                "They will not be able to access the platform."}
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="bordered"
-              onPress={onClose}
-              className="border-white/15 text-slate-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              onPress={handleStatusToggle}
-              isLoading={actionLoading}
-              className={`text-white font-semibold ${
-                selectedUser?.status === "suspended"
-                  ? "bg-gradient-to-r from-emerald-500 to-teal-600"
-                  : "bg-gradient-to-r from-amber-500 to-orange-600"
-              }`}
-            >
-              {selectedUser?.status === "suspended"
-                ? "Activate"
-                : "Suspend"}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
+      <Modal>
+        <Modal.Backdrop
+          isOpen={isOpen && modalType === "suspend"}
+          onOpenChange={setIsOpen}
+        >
+          <Modal.Container size="sm">
+            <Modal.Dialog className="glass-card border border-white/10">
+              <Modal.Header className="border-b border-white/10">
+                <Modal.Heading className="text-white font-bold">
+                  {selectedUser?.status === "suspended"
+                    ? "Activate User"
+                    : "Suspend User"}
+                </Modal.Heading>
+              </Modal.Header>
+              <Modal.Body>
+                <p className="text-slate-400 text-sm py-2">
+                  Are you sure you want to{" "}
+                  {selectedUser?.status === "suspended"
+                    ? "activate"
+                    : "suspend"}{" "}
+                  <span className="text-white font-semibold">
+                    {selectedUser?.name}
+                  </span>
+                  ?{" "}
+                  {selectedUser?.status !== "suspended" &&
+                    "They will not be able to access the platform."}
+                </p>
+              </Modal.Body>
+              <Modal.Footer className="border-t border-white/10">
+                <Button
+                  onPress={onClose}
+                  className="bg-transparent border border-white/15 text-slate-300 h-9 px-4 rounded-lg"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onPress={handleStatusToggle}
+                  isPending={actionLoading}
+                  className={`text-white font-semibold h-9 px-4 rounded-lg ${selectedUser?.status === "suspended"
+                      ? "bg-gradient-to-r from-emerald-500 to-teal-600"
+                      : "bg-gradient-to-r from-amber-500 to-orange-600"
+                    }`}
+                >
+                  {selectedUser?.status === "suspended"
+                    ? "Activate"
+                    : "Suspend"}
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
       </Modal>
     </div>
   );

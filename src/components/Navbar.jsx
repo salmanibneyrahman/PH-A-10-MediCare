@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "react-toastify";
+import Image from "next/image";
 
 export default function AppNavbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -149,9 +150,9 @@ export default function AppNavbar() {
                                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                                 className="flex items-center"
                                             >
-                                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm ring-2 ring-cyan-500/50 hover:ring-cyan-500 transition-all cursor-pointer overflow-hidden">
+                                                <div className="relative w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm ring-2 ring-cyan-500/50 hover:ring-cyan-500 transition-all cursor-pointer overflow-hidden">
                                                     {user?.image ? (
-                                                        <img src={user.image} alt={user?.name || "U"} className="w-full h-full object-cover" />
+                                                        <Image src={user.image} alt={user?.name || "U"} fill className="object-cover rounded-full" />
                                                     ) : (
                                                         (user?.name || "U").charAt(0).toUpperCase()
                                                     )}

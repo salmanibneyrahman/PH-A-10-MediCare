@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Card,
   TextField,
@@ -12,10 +12,11 @@ import {
   ListBox,
 } from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
+import { updateUser } from "@/lib/api";
 import { toast } from "react-toastify";
 
 export default function PatientProfilePage() {
-  const { user, dbUser } = useAuth();
+  const { user, dbUser, refreshUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -25,16 +26,26 @@ export default function PatientProfilePage() {
     photo: "",
   });
 
+  // Hydrate the form once per account. Depending on the `user`/`dbUser`
+  // objects directly would re-run this on every session poll (they are new
+  // object references each time) and wipe out whatever you were typing.
+  const hydratedFor = useRef(null);
+
   useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.name || "",
-        email: user.email || "",
-        phone: dbUser?.phone || "",
-        gender: dbUser?.gender || "",
-        photo: user.image || "",
-      });
-    }
+    const email = user?.email;
+    if (!email) return;
+    // Wait for the DB record so phone/gender aren't hydrated as empty.
+    if (!dbUser) return;
+    if (hydratedFor.current === email) return;
+
+    hydratedFor.current = email;
+    setFormData({
+      name: dbUser.name || user.name || "",
+      email: dbUser.email || email,
+      phone: dbUser.phone || "",
+      gender: dbUser.gender || "",
+      photo: dbUser.photo || user.image || "",
+    });
   }, [user, dbUser]);
 
   const handleChange = useCallback((field, value) => {
@@ -60,10 +71,24 @@ export default function PatientProfilePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.email) return;
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    toast.success("Profile updated successfully!");
-    setLoading(false);
+    try {
+      // Actually persist it — previously this only waited and showed a
+      // toast, which is why phone/gender were never in the database.
+      await updateUser(formData.email, {
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        gender: formData.gender,
+        photo: formData.photo.trim(),
+      });
+      await refreshUser();
+      toast.success("Profile updated successfully!");
+    } catch (err) {
+      toast.error(err?.message || "Could not update profile");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

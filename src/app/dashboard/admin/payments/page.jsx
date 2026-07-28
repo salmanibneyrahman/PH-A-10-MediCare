@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardBody, Input } from "@heroui/react";
+import { useEffect, useState, useCallback } from "react";
+import { Card, TextField, Label, Input } from "@heroui/react";
 import { getAllPayments } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { toast } from "react-toastify";
@@ -33,15 +33,18 @@ export default function AdminPaymentsPage() {
       setFiltered(payments);
       return;
     }
+    const q = search.toLowerCase();
     setFiltered(
       payments.filter(
         (p) =>
-          p.patient?.name?.toLowerCase().includes(search.toLowerCase()) ||
-          p.doctor?.doctorName?.toLowerCase().includes(search.toLowerCase()) ||
-          p.transactionId?.toLowerCase().includes(search.toLowerCase())
+          p.patient?.name?.toLowerCase().includes(q) ||
+          p.doctor?.doctorName?.toLowerCase().includes(q) ||
+          p.transactionId?.toLowerCase().includes(q)
       )
     );
   }, [search, payments]);
+
+  const handleSearchChange = useCallback((value) => setSearch(value), []);
 
   const totalRevenue = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
@@ -82,7 +85,7 @@ export default function AdminPaymentsPage() {
           },
         ].map((card) => (
           <Card key={card.label} className="glass-card border border-white/10">
-            <CardBody className="p-5 flex flex-col gap-3">
+            <Card.Content className="p-5 flex flex-col gap-3">
               <div
                 className={`w-11 h-11 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center shadow-lg`}
               >
@@ -106,24 +109,22 @@ export default function AdminPaymentsPage() {
                 </p>
                 <p className="text-slate-400 text-sm">{card.label}</p>
               </div>
-            </CardBody>
+            </Card.Content>
           </Card>
         ))}
       </div>
 
       {/* Search */}
-      <Input
-        placeholder="Search by patient, doctor or transaction ID..."
+      <TextField
+        name="search"
         value={search}
-        onValueChange={setSearch}
-        classNames={{
-          inputWrapper:
-            "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all",
-          input: "text-slate-200 placeholder:text-slate-500 text-sm",
-        }}
-        startContent={
+        onChange={handleSearchChange}
+        className="w-full"
+      >
+        <Label className="sr-only">Search payments</Label>
+        <div className="relative w-full">
           <svg
-            className="w-4 h-4 text-slate-500 shrink-0"
+            className="w-4 h-4 text-slate-500 shrink-0 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -135,12 +136,16 @@ export default function AdminPaymentsPage() {
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
-        }
-      />
+          <Input
+            placeholder="Search by patient, doctor or transaction ID..."
+            className="w-full h-10 pl-9 pr-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none"
+          />
+        </div>
+      </TextField>
 
       {/* Table */}
       <Card className="glass-card border border-white/10">
-        <CardBody className="p-0">
+        <Card.Content className="p-0">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center gap-4 py-16 text-center">
               <svg
@@ -204,9 +209,9 @@ export default function AdminPaymentsPage() {
                       <td className="text-slate-400 text-sm">
                         {payment.paymentDate
                           ? new Date(payment.paymentDate).toLocaleDateString(
-                              "en-US",
-                              { month: "short", day: "numeric", year: "numeric" }
-                            )
+                            "en-US",
+                            { month: "short", day: "numeric", year: "numeric" }
+                          )
                           : "—"}
                       </td>
                     </tr>
@@ -215,7 +220,7 @@ export default function AdminPaymentsPage() {
               </table>
             </div>
           )}
-        </CardBody>
+        </Card.Content>
       </Card>
     </div>
   );

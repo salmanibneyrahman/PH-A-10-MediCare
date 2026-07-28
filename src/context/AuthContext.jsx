@@ -57,18 +57,37 @@ export function AuthProvider({ children }) {
         }
     }, [isPending, syncUser]);
 
+    // Re-read the DB record without a full page reload — used after the
+    // profile page saves, so the sidebar and avatar update immediately.
+    const refreshUser = useCallback(async () => {
+        if (!user?.email) return null;
+        try {
+            const freshUser = await getUserByEmail(user.email);
+            setDbUser(freshUser);
+            return freshUser;
+        } catch {
+            return null;
+        }
+    }, [user]);
+
     const logout = async () => {
         await signOut();
         clearAuthToken();
         setDbUser(null);
     };
 
+    const avatarUrl = dbUser?.photo || user?.image || "";
+    const displayName = dbUser?.name || user?.name || "";
+    const mergedUser = user ? { ...user, name: displayName, image: avatarUrl } : null;
     const value = {
-        user,
+        user: mergedUser,
         dbUser,
         session,
+        avatarUrl,
+        displayName,
         loading: isPending || userLoading,
         logout,
+        refreshUser,
         isAuthenticated: !!user,
         isAdmin: dbUser?.role === "admin",
         isDoctor: dbUser?.role === "doctor",

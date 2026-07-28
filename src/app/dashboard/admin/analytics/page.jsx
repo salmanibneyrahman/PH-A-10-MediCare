@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardBody } from "@heroui/react";
+import { Card } from "@heroui/react";
 import { getAnalytics } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import StarRating from "@/components/StarRating";
@@ -27,8 +27,8 @@ import {
 } from "recharts";
 
 const MONTH_NAMES = [
-  "Jan","Feb","Mar","Apr","May","Jun",
-  "Jul","Aug","Sep","Oct","Nov","Dec",
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -131,7 +131,7 @@ export default function AdminAnalyticsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {summaryCards.map((card) => (
           <Card key={card.label} className="glass-card border border-white/10">
-            <CardBody className="p-5 flex flex-col gap-4">
+            <Card.Content className="p-5 flex flex-col gap-4">
               <div
                 className={`w-11 h-11 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center shadow-lg`}
               >
@@ -155,14 +155,14 @@ export default function AdminAnalyticsPage() {
                 </p>
                 <p className="text-slate-400 text-sm mt-0.5">{card.label}</p>
               </div>
-            </CardBody>
+            </Card.Content>
           </Card>
         ))}
       </div>
 
       {/* Area Chart - Monthly Trend */}
       <Card className="glass-card border border-white/10">
-        <CardBody className="p-6">
+        <Card.Content className="p-6">
           <h3 className="text-white font-bold text-base mb-6">
             Monthly Appointment Trend
           </h3>
@@ -222,14 +222,14 @@ export default function AdminAnalyticsPage() {
               </AreaChart>
             </ResponsiveContainer>
           )}
-        </CardBody>
+        </Card.Content>
       </Card>
 
       {/* Doctor Performance Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Rating Bar Chart */}
         <Card className="glass-card border border-white/10">
-          <CardBody className="p-6">
+          <Card.Content className="p-6">
             <h3 className="text-white font-bold text-base mb-6">
               Doctor Ratings
             </h3>
@@ -269,12 +269,12 @@ export default function AdminAnalyticsPage() {
                 </BarChart>
               </ResponsiveContainer>
             )}
-          </CardBody>
+          </Card.Content>
         </Card>
 
         {/* Radar Chart */}
         <Card className="glass-card border border-white/10">
-          <CardBody className="p-6">
+          <Card.Content className="p-6">
             <h3 className="text-white font-bold text-base mb-6">
               Performance Overview
             </h3>
@@ -307,13 +307,13 @@ export default function AdminAnalyticsPage() {
                 </RadarChart>
               </ResponsiveContainer>
             )}
-          </CardBody>
+          </Card.Content>
         </Card>
       </div>
 
       {/* Top Doctor Performance Table */}
       <Card className="glass-card border border-white/10">
-        <CardBody className="p-6">
+        <Card.Content className="p-6">
           <h3 className="text-white font-bold text-base mb-6">
             Top Performing Doctors
           </h3>
@@ -338,15 +338,14 @@ export default function AdminAnalyticsPage() {
                     <tr key={doc.fullName}>
                       <td>
                         <div
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm ${
-                            index === 0
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm ${index === 0
                               ? "bg-amber-500/20 text-amber-400"
                               : index === 1
-                              ? "bg-slate-400/20 text-slate-300"
-                              : index === 2
-                              ? "bg-orange-500/20 text-orange-400"
-                              : "bg-white/5 text-slate-500"
-                          }`}
+                                ? "bg-slate-400/20 text-slate-300"
+                                : index === 2
+                                  ? "bg-orange-500/20 text-orange-400"
+                                  : "bg-white/5 text-slate-500"
+                            }`}
                         >
                           {index + 1}
                         </div>
@@ -380,7 +379,7 @@ export default function AdminAnalyticsPage() {
               </table>
             </div>
           )}
-        </CardBody>
+        </Card.Content>
       </Card>
     </div>
   );

@@ -1,19 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  Card,
-  CardBody,
-  Button,
-  Avatar,
-  Input,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
-} from "@heroui/react";
+import { useEffect, useState, useCallback } from "react";
+import { Card, Button, Avatar, TextField, Label, Input, Modal } from "@heroui/react";
 import { getAllDoctorsAdmin, verifyDoctor } from "@/lib/api";
 import StatusBadge from "@/components/StatusBadge";
 import StarRating from "@/components/StarRating";
@@ -21,7 +9,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { toast } from "react-toastify";
 
 export default function AdminDoctorsPage() {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isOpen, setIsOpen] = useState(false);
   const [doctors, setDoctors] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,11 +29,12 @@ export default function AdminDoctorsPage() {
       result = result.filter((d) => d.verificationStatus === activeFilter);
     }
     if (search.trim()) {
+      const q = search.toLowerCase();
       result = result.filter(
         (d) =>
-          d.doctorName?.toLowerCase().includes(search.toLowerCase()) ||
-          d.specialization?.toLowerCase().includes(search.toLowerCase()) ||
-          d.email?.toLowerCase().includes(search.toLowerCase())
+          d.doctorName?.toLowerCase().includes(q) ||
+          d.specialization?.toLowerCase().includes(q) ||
+          d.email?.toLowerCase().includes(q)
       );
     }
     setFiltered(result);
@@ -64,11 +53,15 @@ export default function AdminDoctorsPage() {
     }
   }
 
+  const onClose = useCallback(() => setIsOpen(false), []);
+
   const openModal = (doctor, type) => {
     setSelectedDoctor(doctor);
     setModalType(type);
-    onOpen();
+    setIsOpen(true);
   };
+
+  const handleSearchChange = useCallback((value) => setSearch(value), []);
 
   const handleVerify = async (status) => {
     setActionLoading(true);
@@ -115,18 +108,16 @@ export default function AdminDoctorsPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <Input
-          placeholder="Search by name, specialization or email..."
+        <TextField
+          name="search"
           value={search}
-          onValueChange={setSearch}
-          classNames={{
-            inputWrapper:
-              "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all",
-            input: "text-slate-200 placeholder:text-slate-500 text-sm",
-          }}
-          startContent={
+          onChange={handleSearchChange}
+          className="w-full"
+        >
+          <Label className="sr-only">Search doctors</Label>
+          <div className="relative w-full">
             <svg
-              className="w-4 h-4 text-slate-500 shrink-0"
+              className="w-4 h-4 text-slate-500 shrink-0 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -138,18 +129,22 @@ export default function AdminDoctorsPage() {
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
-          }
-        />
+            <Input
+              placeholder="Search by name, specialization or email..."
+              className="w-full h-10 pl-9 pr-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none"
+            />
+          </div>
+        </TextField>
         <div className="flex gap-1 p-1 rounded-xl glass-card border border-white/10 shrink-0">
           {filterOptions.map((f) => (
             <button
               key={f}
+              type="button"
               onClick={() => setActiveFilter(f)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
-                activeFilter === f
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${activeFilter === f
                   ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-              }`}
+                }`}
             >
               {f}
             </button>
@@ -160,7 +155,7 @@ export default function AdminDoctorsPage() {
       {/* Doctors Grid */}
       {filtered.length === 0 ? (
         <Card className="glass-card border border-white/10">
-          <CardBody className="p-16 text-center">
+          <Card.Content className="p-16 text-center">
             <svg
               className="w-16 h-16 mx-auto text-slate-700 mb-4"
               fill="none"
@@ -175,32 +170,31 @@ export default function AdminDoctorsPage() {
               />
             </svg>
             <p className="text-slate-400 font-medium">No doctors found</p>
-          </CardBody>
+          </Card.Content>
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filtered.map((doc) => (
             <Card
               key={doc._id}
-              className={`glass-card border transition-all ${
-                doc.verificationStatus === "pending"
+              className={`glass-card border transition-all ${doc.verificationStatus === "pending"
                   ? "border-amber-500/20 hover:border-amber-500/40"
                   : doc.verificationStatus === "verified"
-                  ? "border-emerald-500/20 hover:border-emerald-500/30"
-                  : "border-white/10 hover:border-white/15"
-              }`}
+                    ? "border-emerald-500/20 hover:border-emerald-500/30"
+                    : "border-white/10 hover:border-white/15"
+                }`}
             >
-              <CardBody className="p-5">
+              <Card.Content className="p-5">
                 <div className="flex items-start gap-4">
-                  <Avatar
-                    src={doc.profileImage || ""}
-                    name={doc.doctorName || "D"}
-                    size="lg"
-                    classNames={{
-                      base: "bg-gradient-to-br from-cyan-500 to-indigo-600 shrink-0",
-                      name: "text-white font-bold",
-                    }}
-                  />
+                  <Avatar size="lg" className="shrink-0">
+                    <Avatar.Image
+                      src={doc.profileImage || ""}
+                      alt={doc.doctorName || "Doctor"}
+                    />
+                    <Avatar.Fallback className="bg-gradient-to-br from-cyan-500 to-indigo-600 text-white font-bold">
+                      {doc.doctorName?.[0]?.toUpperCase() || "D"}
+                    </Avatar.Fallback>
+                  </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 flex-wrap">
                       <div>
@@ -244,8 +238,8 @@ export default function AdminDoctorsPage() {
                         <>
                           <Button
                             size="sm"
-                            onClick={() => openModal(doc, "verify")}
-                            className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold text-xs shadow-lg shadow-emerald-500/20"
+                            onPress={() => openModal(doc, "verify")}
+                            className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold text-xs shadow-lg shadow-emerald-500/20 h-8 px-3 rounded-lg"
                             startContent={
                               <svg
                                 className="w-3.5 h-3.5"
@@ -266,9 +260,8 @@ export default function AdminDoctorsPage() {
                           </Button>
                           <Button
                             size="sm"
-                            onClick={() => openModal(doc, "reject")}
-                            variant="bordered"
-                            className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
+                            onPress={() => openModal(doc, "reject")}
+                            className="bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs h-8 px-3 rounded-lg"
                           >
                             Reject
                           </Button>
@@ -277,9 +270,8 @@ export default function AdminDoctorsPage() {
                       {doc.verificationStatus === "verified" && (
                         <Button
                           size="sm"
-                          onClick={() => openModal(doc, "cancel")}
-                          variant="bordered"
-                          className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs"
+                          onPress={() => openModal(doc, "cancel")}
+                          className="bg-transparent border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs h-8 px-3 rounded-lg"
                         >
                           Cancel Verification
                         </Button>
@@ -287,9 +279,8 @@ export default function AdminDoctorsPage() {
                       {doc.verificationStatus === "rejected" && (
                         <Button
                           size="sm"
-                          onClick={() => openModal(doc, "verify")}
-                          variant="bordered"
-                          className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs"
+                          onPress={() => openModal(doc, "verify")}
+                          className="bg-transparent border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs h-8 px-3 rounded-lg"
                         >
                           Re-verify
                         </Button>
@@ -297,74 +288,67 @@ export default function AdminDoctorsPage() {
                     </div>
                   </div>
                 </div>
-              </CardBody>
+              </Card.Content>
             </Card>
           ))}
         </div>
       )}
 
       {/* Action Modal */}
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        size="sm"
-        classNames={{
-          base: "glass-card border border-white/10",
-          header: "border-b border-white/10",
-          footer: "border-t border-white/10",
-        }}
-      >
-        <ModalContent>
-          <ModalHeader>
-            <h3 className="text-white font-bold capitalize">
-              {modalType === "verify"
-                ? "Verify Doctor"
-                : modalType === "reject"
-                ? "Reject Doctor"
-                : "Cancel Verification"}
-            </h3>
-          </ModalHeader>
-          <ModalBody>
-            <p className="text-slate-400 text-sm py-2">
-              {modalType === "verify" &&
-                `Are you sure you want to verify Dr. ${selectedDoctor?.doctorName}? They will be able to receive patient appointments.`}
-              {modalType === "reject" &&
-                `Are you sure you want to reject Dr. ${selectedDoctor?.doctorName}'s profile? They will need to reapply.`}
-              {modalType === "cancel" &&
-                `Are you sure you want to cancel verification for Dr. ${selectedDoctor?.doctorName}? They will no longer appear in search results.`}
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="bordered"
-              onPress={onClose}
-              className="border-white/15 text-slate-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              onPress={() =>
-                handleVerify(
-                  modalType === "verify"
-                    ? "verified"
+      <Modal>
+        <Modal.Backdrop isOpen={isOpen} onOpenChange={setIsOpen}>
+          <Modal.Container size="sm">
+            <Modal.Dialog className="glass-card border border-white/10">
+              <Modal.Header className="border-b border-white/10">
+                <Modal.Heading className="text-white font-bold capitalize">
+                  {modalType === "verify"
+                    ? "Verify Doctor"
                     : modalType === "reject"
-                    ? "rejected"
-                    : "pending"
-                )
-              }
-              isLoading={actionLoading}
-              className={`text-white font-semibold ${
-                modalType === "verify"
-                  ? "bg-gradient-to-r from-emerald-500 to-teal-600"
-                  : modalType === "reject"
-                  ? "bg-gradient-to-r from-red-500 to-rose-600"
-                  : "bg-gradient-to-r from-amber-500 to-orange-600"
-              }`}
-            >
-              Confirm
-            </Button>
-          </ModalFooter>
-        </ModalContent>
+                      ? "Reject Doctor"
+                      : "Cancel Verification"}
+                </Modal.Heading>
+              </Modal.Header>
+              <Modal.Body>
+                <p className="text-slate-400 text-sm py-2">
+                  {modalType === "verify" &&
+                    `Are you sure you want to verify Dr. ${selectedDoctor?.doctorName}? They will be able to receive patient appointments.`}
+                  {modalType === "reject" &&
+                    `Are you sure you want to reject Dr. ${selectedDoctor?.doctorName}'s profile? They will need to reapply.`}
+                  {modalType === "cancel" &&
+                    `Are you sure you want to cancel verification for Dr. ${selectedDoctor?.doctorName}? They will no longer appear in search results.`}
+                </p>
+              </Modal.Body>
+              <Modal.Footer className="border-t border-white/10">
+                <Button
+                  onPress={onClose}
+                  className="bg-transparent border border-white/15 text-slate-300 h-9 px-4 rounded-lg"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onPress={() =>
+                    handleVerify(
+                      modalType === "verify"
+                        ? "verified"
+                        : modalType === "reject"
+                          ? "rejected"
+                          : "pending"
+                    )
+                  }
+                  isPending={actionLoading}
+                  className={`text-white font-semibold h-9 px-4 rounded-lg ${modalType === "verify"
+                      ? "bg-gradient-to-r from-emerald-500 to-teal-600"
+                      : modalType === "reject"
+                        ? "bg-gradient-to-r from-red-500 to-rose-600"
+                        : "bg-gradient-to-r from-amber-500 to-orange-600"
+                    }`}
+                >
+                  Confirm
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
       </Modal>
     </div>
   );
