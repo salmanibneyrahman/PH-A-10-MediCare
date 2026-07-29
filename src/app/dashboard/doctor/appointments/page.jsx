@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardBody, Button, Avatar } from "@heroui/react";
+import { Card, Button } from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
 import {
   getDoctorAppointments,
@@ -114,6 +114,7 @@ export default function DoctorAppointmentsPage() {
         {STATUS_FILTERS.map((filter) => (
           <button
             key={filter}
+            type="button"
             onClick={() => setActiveFilter(filter)}
             className={`flex-1 min-w-fit px-3 py-2 rounded-lg text-xs font-semibold transition-all capitalize whitespace-nowrap ${
               activeFilter === filter
@@ -130,7 +131,7 @@ export default function DoctorAppointmentsPage() {
 
       {filtered.length === 0 ? (
         <Card className="glass-card border border-white/10">
-          <CardBody className="p-16 flex flex-col items-center gap-4 text-center">
+          <Card.Content className="p-16 flex flex-col items-center gap-4 text-center">
             <div className="w-20 h-20 rounded-2xl bg-slate-800 flex items-center justify-center">
               <svg
                 className="w-10 h-10 text-slate-600"
@@ -158,7 +159,7 @@ export default function DoctorAppointmentsPage() {
                   : "No appointments found for this filter."}
               </p>
             </div>
-          </CardBody>
+          </Card.Content>
         </Card>
       ) : (
         <div className="flex flex-col gap-4">
@@ -167,7 +168,7 @@ export default function DoctorAppointmentsPage() {
               key={apt._id}
               className="glass-card border border-white/10 hover:border-white/15 transition-all"
             >
-              <CardBody className="p-5">
+              <Card.Content className="p-5">
                 <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
                   <div className="flex items-center gap-4 flex-1 min-w-0">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-600/20 flex items-center justify-center shrink-0">
@@ -245,26 +246,25 @@ export default function DoctorAppointmentsPage() {
                       <div className="flex gap-2">
                         <Button
                           size="sm"
-                          isLoading={
+                          isPending={
                             actionLoading === apt._id + "confirmed"
                           }
-                          onClick={() =>
+                          onPress={() =>
                             handleStatusUpdate(apt._id, "confirmed")
                           }
-                          className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold text-xs shadow-lg shadow-emerald-500/20"
+                          className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold text-xs shadow-lg shadow-emerald-500/20 h-8 px-3 rounded-lg"
                         >
                           Accept
                         </Button>
                         <Button
                           size="sm"
-                          isLoading={
+                          isPending={
                             actionLoading === apt._id + "rejected"
                           }
-                          onClick={() =>
+                          onPress={() =>
                             handleStatusUpdate(apt._id, "rejected")
                           }
-                          variant="bordered"
-                          className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
+                          className="bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs h-8 px-3 rounded-lg"
                         >
                           Reject
                         </Button>
@@ -274,20 +274,20 @@ export default function DoctorAppointmentsPage() {
                     {apt.appointmentStatus === "confirmed" && (
                       <Button
                         size="sm"
-                        isLoading={
+                        isPending={
                           actionLoading === apt._id + "completed"
                         }
-                        onClick={() =>
+                        onPress={() =>
                           handleStatusUpdate(apt._id, "completed")
                         }
-                        className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold text-xs shadow-lg shadow-cyan-500/20"
+                        className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold text-xs shadow-lg shadow-cyan-500/20 h-8 px-3 rounded-lg"
                       >
                         Mark Complete & Prescribe
                       </Button>
                     )}
                   </div>
                 </div>
-              </CardBody>
+              </Card.Content>
             </Card>
           ))}
         </div>

@@ -1,19 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  Card,
-  CardBody,
-  Button,
-  Input,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
-  Checkbox,
-} from "@heroui/react";
+import { useEffect, useState, useCallback } from "react";
+import { Card, Button, TextField, Label, Input, Modal } from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
 import { getDoctorByEmail, updateDoctor } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -44,7 +32,7 @@ const PRESET_SLOTS = [
 
 export default function DoctorSchedulePage() {
   const { user } = useAuth();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isOpen, setIsOpen] = useState(false);
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -55,6 +43,8 @@ export default function DoctorSchedulePage() {
 
   const [availableDays, setAvailableDays] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
+
+  const onClose = useCallback(() => setIsOpen(false), []);
 
   useEffect(() => {
     fetchDoctor();
@@ -156,17 +146,22 @@ export default function DoctorSchedulePage() {
     }
   };
 
+  const handleSlotChange = useCallback((value) => {
+    setNewSlot(value);
+    if (newSlotError) setNewSlotError("");
+  }, [newSlotError]);
+
   const openAddModal = () => {
     setModalType("add");
     setNewSlot("");
     setNewSlotError("");
-    onOpen();
+    setIsOpen(true);
   };
 
   const openRemoveModal = (slot) => {
     setSelectedSlotToRemove(slot);
     setModalType("remove");
-    onOpen();
+    setIsOpen(true);
   };
 
   if (loading) return <LoadingSpinner text="Loading schedule..." />;
@@ -182,8 +177,8 @@ export default function DoctorSchedulePage() {
           </p>
         </div>
         <Button
-          onClick={openAddModal}
-          className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold shadow-lg shadow-cyan-500/20"
+          onPress={openAddModal}
+          className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold shadow-lg shadow-cyan-500/20 h-10 px-4 rounded-lg"
           startContent={
             <svg
               className="w-4 h-4"
@@ -206,7 +201,7 @@ export default function DoctorSchedulePage() {
 
       {/* Available Days */}
       <Card className="glass-card border border-white/10">
-        <CardBody className="p-6">
+        <Card.Content className="p-6">
           <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
             <h2 className="text-white font-bold text-lg flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
@@ -227,10 +222,10 @@ export default function DoctorSchedulePage() {
               Available Days
             </h2>
             <Button
-              onClick={handleSaveDays}
-              isLoading={saveLoading}
+              onPress={handleSaveDays}
+              isPending={saveLoading}
               size="sm"
-              className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold"
+              className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold h-9 px-4 rounded-lg"
             >
               Save Days
             </Button>
@@ -244,18 +239,16 @@ export default function DoctorSchedulePage() {
                   key={day}
                   type="button"
                   onClick={() => handleDayToggle(day)}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-200 ${
-                    isSelected
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-200 ${isSelected
                       ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-400 shadow-lg shadow-cyan-500/10"
                       : "bg-white/5 border-white/10 text-slate-400 hover:border-white/20 hover:text-slate-200"
-                  }`}
+                    }`}
                 >
                   <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                      isSelected
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isSelected
                         ? "bg-cyan-500/20"
                         : "bg-white/5"
-                    }`}
+                      }`}
                   >
                     {isSelected ? (
                       <svg
@@ -312,12 +305,12 @@ export default function DoctorSchedulePage() {
             {availableDays.length} day{availableDays.length !== 1 ? "s" : ""}{" "}
             selected. Click days to toggle, then save.
           </div>
-        </CardBody>
+        </Card.Content>
       </Card>
 
       {/* Time Slots */}
       <Card className="glass-card border border-white/10">
-        <CardBody className="p-6">
+        <Card.Content className="p-6">
           <h2 className="text-white font-bold text-lg mb-6 flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-cyan-500/15 flex items-center justify-center">
               <svg
@@ -387,6 +380,7 @@ export default function DoctorSchedulePage() {
                     </span>
                   </div>
                   <button
+                    type="button"
                     onClick={() => openRemoveModal(slot)}
                     className="text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
                   >
@@ -420,13 +414,13 @@ export default function DoctorSchedulePage() {
                 return (
                   <button
                     key={slot}
+                    type="button"
                     onClick={() => !isAdded && handleAddPresetSlot(slot)}
                     disabled={isAdded}
-                    className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
-                      isAdded
+                    className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all ${isAdded
                         ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 cursor-not-allowed"
                         : "bg-white/5 border-white/10 text-slate-400 hover:border-cyan-500/30 hover:text-cyan-400 hover:bg-cyan-500/5"
-                    }`}
+                      }`}
                   >
                     {isAdded ? (
                       <span className="flex items-center gap-1 justify-center">
@@ -453,124 +447,97 @@ export default function DoctorSchedulePage() {
               })}
             </div>
           </div>
-        </CardBody>
+        </Card.Content>
       </Card>
 
       {/* Add Custom Slot Modal */}
-      <Modal
-        isOpen={isOpen && modalType === "add"}
-        onClose={onClose}
-        size="sm"
-        classNames={{
-          base: "glass-card border border-white/10",
-          header: "border-b border-white/10",
-          footer: "border-t border-white/10",
-        }}
-      >
-        <ModalContent>
-          <ModalHeader>
-            <h3 className="text-white font-bold">Add Custom Time Slot</h3>
-          </ModalHeader>
-          <ModalBody>
-            <div className="flex flex-col gap-3 py-2">
-              <Input
-                label="Time Slot"
-                placeholder="e.g. 7:30 AM or 8:00 PM"
-                value={newSlot}
-                onValueChange={(v) => {
-                  setNewSlot(v);
-                  if (newSlotError) setNewSlotError("");
-                }}
-                isInvalid={!!newSlotError}
-                errorMessage={newSlotError}
-                classNames={{
-                  inputWrapper:
-                    "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all data-[invalid=true]:border-red-500/60",
-                  input: "text-slate-200 placeholder:text-slate-500 text-sm",
-                  label: "text-slate-400 text-sm",
-                  errorMessage: "text-red-400 text-xs",
-                }}
-                startContent={
-                  <svg
-                    className="w-4 h-4 text-slate-500 shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+      <Modal>
+        <Modal.Backdrop isOpen={isOpen && modalType === "add"} onOpenChange={setIsOpen}>
+          <Modal.Container size="sm">
+            <Modal.Dialog className="glass-card border border-white/10">
+              <Modal.Header className="border-b border-white/10">
+                <Modal.Heading className="text-white font-bold">
+                  Add Custom Time Slot
+                </Modal.Heading>
+              </Modal.Header>
+              <Modal.Body>
+                <div className="flex flex-col gap-3 py-2">
+                  <TextField
+                    name="timeSlot"
+                    value={newSlot}
+                    onChange={handleSlotChange}
+                    isInvalid={!!newSlotError}
+                    errorMessage={newSlotError}
+                    className="w-full"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    <Label className="text-slate-400 text-sm">Time Slot</Label>
+                    <Input
+                      placeholder="e.g. 7:30 AM or 8:00 PM"
+                      className="w-full h-10 px-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none data-[invalid=true]:border-red-500/60"
                     />
-                  </svg>
-                }
-              />
-              <p className="text-slate-500 text-xs">
-                Enter time in format like &quot;9:30 AM&quot; or &quot;4:30 PM&quot;
-              </p>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="bordered"
-              onPress={onClose}
-              className="border-white/15 text-slate-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              onPress={handleAddSlot}
-              isLoading={saveLoading}
-              className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold"
-            >
-              Add Slot
-            </Button>
-          </ModalFooter>
-        </ModalContent>
+                  </TextField>
+                  <p className="text-slate-500 text-xs">
+                    Enter time in format like &quot;9:30 AM&quot; or &quot;4:30 PM&quot;
+                  </p>
+                </div>
+              </Modal.Body>
+              <Modal.Footer className="border-t border-white/10">
+                <Button
+                  onPress={onClose}
+                  className="bg-transparent border border-white/15 text-slate-300 h-9 px-4 rounded-lg"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onPress={handleAddSlot}
+                  isPending={saveLoading}
+                  className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold h-9 px-4 rounded-lg"
+                >
+                  Add Slot
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
       </Modal>
 
       {/* Remove Slot Modal */}
-      <Modal
-        isOpen={isOpen && modalType === "remove"}
-        onClose={onClose}
-        size="sm"
-        classNames={{
-          base: "glass-card border border-white/10",
-          header: "border-b border-white/10",
-          footer: "border-t border-white/10",
-        }}
-      >
-        <ModalContent>
-          <ModalHeader>
-            <h3 className="text-white font-bold">Remove Time Slot</h3>
-          </ModalHeader>
-          <ModalBody>
-            <p className="text-slate-400 text-sm py-2">
-              Are you sure you want to remove the{" "}
-              <span className="text-cyan-400 font-semibold">
-                {selectedSlotToRemove}
-              </span>{" "}
-              time slot from your schedule?
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="bordered"
-              onPress={onClose}
-              className="border-white/15 text-slate-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              onPress={handleRemoveSlot}
-              isLoading={saveLoading}
-              className="bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold"
-            >
-              Remove Slot
-            </Button>
-          </ModalFooter>
-        </ModalContent>
+      <Modal>
+        <Modal.Backdrop isOpen={isOpen && modalType === "remove"} onOpenChange={setIsOpen}>
+          <Modal.Container size="sm">
+            <Modal.Dialog className="glass-card border border-white/10">
+              <Modal.Header className="border-b border-white/10">
+                <Modal.Heading className="text-white font-bold">
+                  Remove Time Slot
+                </Modal.Heading>
+              </Modal.Header>
+              <Modal.Body>
+                <p className="text-slate-400 text-sm py-2">
+                  Are you sure you want to remove the{" "}
+                  <span className="text-cyan-400 font-semibold">
+                    {selectedSlotToRemove}
+                  </span>{" "}
+                  time slot from your schedule?
+                </p>
+              </Modal.Body>
+              <Modal.Footer className="border-t border-white/10">
+                <Button
+                  onPress={onClose}
+                  className="bg-transparent border border-white/15 text-slate-300 h-9 px-4 rounded-lg"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onPress={handleRemoveSlot}
+                  isPending={saveLoading}
+                  className="bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold h-9 px-4 rounded-lg"
+                >
+                  Remove Slot
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
       </Modal>
     </div>
   );

@@ -17,10 +17,12 @@ import {
 } from "@heroui/react";
 import { signUp, signIn } from "@/lib/authClient";
 import { createUser } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "react-toastify";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -143,9 +145,6 @@ export default function RegisterPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Stable across renders (empty deps) — both setters use the functional form,
-  // so there is no stale-closure risk. Clearing the error inside the updater
-  // lets React bail out when nothing actually changed.
   const handleChange = useCallback((field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => (prev[field] ? { ...prev, [field]: "" } : prev));
@@ -193,6 +192,13 @@ export default function RegisterPage() {
     if (!validate()) return;
     setLoading(true);
     try {
+
+      try {
+        sessionStorage.setItem("pendingRole", formData.role);
+      } catch {
+
+      }
+
       const result = await signUp.email({
         name: formData.name.trim(),
         email: formData.email.trim(),
@@ -203,9 +209,6 @@ export default function RegisterPage() {
       if (result?.error) {
         toast.error(result.error.message || "Registration failed");
       } else {
-        // Persist the profile fields better-auth doesn't manage.
-        // `role` is sent here (not to signUp) so the server stays in control
-        // of it — see the note in the Express route.
         try {
           await createUser({
             name: formData.name.trim(),
@@ -217,6 +220,12 @@ export default function RegisterPage() {
           });
         } catch {
           // Non-fatal: the account exists, profile sync can retry on login.
+        }
+
+        try {
+          await refreshUser();
+        } catch {
+          // ignore
         }
 
         toast.success("Account created successfully! Welcome to MediCare Connect.");

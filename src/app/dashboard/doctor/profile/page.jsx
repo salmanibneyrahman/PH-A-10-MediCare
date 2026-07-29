@@ -1,16 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  Card,
-  CardBody,
-  Input,
-  Button,
-  Avatar,
-  Select,
-  SelectItem,
-  Textarea,
-} from "@heroui/react";
+import { useEffect, useState, useCallback } from "react";
+import { Card, Input, Button, Avatar, Select, ListBox, TextField, Label } from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
 import { getDoctorByEmail, updateDoctor, createDoctor } from "@/lib/api";
 import StatusBadge from "@/components/StatusBadge";
@@ -18,9 +9,9 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { toast } from "react-toastify";
 
 const SPECIALIZATIONS = [
-  "Cardiology","Neurology","Orthopedics","Pediatrics","Dermatology",
-  "Oncology","Psychiatry","Gynecology","Ophthalmology","ENT",
-  "Gastroenterology","Urology","General Medicine","Radiology","Anesthesiology",
+  "Cardiology", "Neurology", "Orthopedics", "Pediatrics", "Dermatology",
+  "Oncology", "Psychiatry", "Gynecology", "Ophthalmology", "ENT",
+  "Gastroenterology", "Urology", "General Medicine", "Radiology", "Anesthesiology",
 ];
 
 export default function DoctorProfilePage() {
@@ -86,10 +77,10 @@ export default function DoctorProfilePage() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleChange = (field, value) => {
+  const handleChange = useCallback((field, value) => {
     setFormData((p) => ({ ...p, [field]: value }));
     if (formErrors[field]) setFormErrors((p) => ({ ...p, [field]: "" }));
-  };
+  }, [formErrors]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -120,13 +111,15 @@ export default function DoctorProfilePage() {
     }
   };
 
-  const inputClass = {
-    inputWrapper:
-      "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all data-[invalid=true]:border-red-500/60",
-    input: "text-slate-200 placeholder:text-slate-500 text-sm",
-    label: "text-slate-400 text-sm",
-    errorMessage: "text-red-400 text-xs",
-  };
+  const inputClass = "w-full h-10 px-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none data-[invalid=true]:border-red-500/60";
+
+  const handleDoctorNameChange = useCallback((value) => handleChange("doctorName", value), [handleChange]);
+  const handleSpecializationChange = useCallback((keys) => handleChange("specialization", Array.from(keys)[0] || ""), [handleChange]);
+  const handleQualificationsChange = useCallback((value) => handleChange("qualifications", value), [handleChange]);
+  const handleExperienceChange = useCallback((value) => handleChange("experience", value), [handleChange]);
+  const handleConsultationFeeChange = useCallback((value) => handleChange("consultationFee", value), [handleChange]);
+  const handleHospitalNameChange = useCallback((value) => handleChange("hospitalName", value), [handleChange]);
+  const handleProfileImageChange = useCallback((value) => handleChange("profileImage", value), [handleChange]);
 
   if (loading) return <LoadingSpinner text="Loading doctor profile..." />;
 
@@ -146,17 +139,17 @@ export default function DoctorProfilePage() {
       {/* Profile Header */}
       {!isNew && doctor && (
         <Card className="glass-card border border-white/10">
-          <CardBody className="p-6">
+          <Card.Content className="p-6">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-              <Avatar
-                src={doctor.profileImage || ""}
-                name={doctor.doctorName || "D"}
-                className="w-24 h-24 text-3xl ring-4 ring-cyan-500/20"
-                classNames={{
-                  base: "bg-gradient-to-br from-cyan-500 to-blue-600",
-                  name: "text-white font-black text-2xl",
-                }}
-              />
+              <Avatar className="w-24 h-24 ring-4 ring-cyan-500/20">
+                <Avatar.Image
+                  src={doctor.profileImage || ""}
+                  alt={doctor.doctorName || "Doctor"}
+                />
+                <Avatar.Fallback className="bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-black text-2xl">
+                  {(doctor.doctorName || "D")[0]}
+                </Avatar.Fallback>
+              </Avatar>
               <div className="flex flex-col gap-2 text-center sm:text-left flex-1">
                 <h2 className="text-xl font-black text-white">
                   {doctor.doctorName}
@@ -188,13 +181,13 @@ export default function DoctorProfilePage() {
                 </div>
               </div>
             </div>
-          </CardBody>
+          </Card.Content>
         </Card>
       )}
 
       {/* Edit Form */}
       <Card className="glass-card border border-white/10">
-        <CardBody className="p-6">
+        <Card.Content className="p-6">
           <h3 className="text-white font-bold text-base mb-6 flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-cyan-500/15 flex items-center justify-center">
               <svg
@@ -215,74 +208,81 @@ export default function DoctorProfilePage() {
           </h3>
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                label="Full Name"
-                placeholder="Dr. John Smith"
+              <TextField
+                name="doctorName"
                 value={formData.doctorName}
-                onValueChange={(v) => handleChange("doctorName", v)}
+                onChange={handleDoctorNameChange}
                 isInvalid={!!formErrors.doctorName}
                 errorMessage={formErrors.doctorName}
-                classNames={inputClass}
-              />
+                className="w-full"
+              >
+                <Label className="text-slate-400 text-sm">Full Name</Label>
+                <Input
+                  placeholder="Dr. John Smith"
+                  className={inputClass}
+                />
+              </TextField>
               <Select
-                label="Specialization"
-                placeholder="Select specialization"
                 selectedKeys={
                   formData.specialization ? [formData.specialization] : []
                 }
-                onSelectionChange={(keys) =>
-                  handleChange("specialization", Array.from(keys)[0] || "")
-                }
+                onSelectionChange={handleSpecializationChange}
                 isInvalid={!!formErrors.specialization}
                 errorMessage={formErrors.specialization}
                 classNames={{
                   trigger:
-                    "bg-white/5 border border-white/10 hover:border-cyan-500/40 data-[focus=true]:border-cyan-500 transition-all data-[invalid=true]:border-red-500/60",
+                    "bg-white/5 border border-white/10 hover:border-cyan-500/40 data-[focus=true]:border-cyan-500 transition-all data-[invalid=true]:border-red-500/60 h-10",
                   value: "text-slate-200 text-sm",
-                  label: "text-slate-400 text-sm",
-                  listbox: "bg-[#0d1b2a]",
                   popoverContent: "bg-[#0d1b2a] border border-white/10",
-                  errorMessage: "text-red-400 text-xs",
                 }}
               >
-                {SPECIALIZATIONS.map((s) => (
-                  <SelectItem
-                    key={s}
-                    className="text-slate-300 hover:bg-white/5 data-[hover=true]:bg-white/5"
-                  >
-                    {s}
-                  </SelectItem>
-                ))}
+                <Label className="text-slate-400 text-sm mb-1">Specialization</Label>
+                <Select.Trigger>
+                  <Select.Value placeholder="Select specialization" />
+                  <Select.Indicator />
+                </Select.Trigger>
+                <Select.Popover>
+                  <ListBox>
+                    {SPECIALIZATIONS.map((s) => (
+                      <ListBox.Item
+                        key={s}
+                        className="text-slate-300 hover:bg-white/5 data-[hover=true]:bg-white/5"
+                      >
+                        {s}
+                      </ListBox.Item>
+                    ))}
+                  </ListBox>
+                </Select.Popover>
               </Select>
             </div>
 
-            <Input
-              label="Qualifications (comma separated)"
-              placeholder="MBBS, MD, FRCS"
+            <TextField
+              name="qualifications"
               value={formData.qualifications}
-              onValueChange={(v) => handleChange("qualifications", v)}
-              classNames={inputClass}
-              description="Separate multiple qualifications with commas"
-              classNames={{
-                ...inputClass,
-                description: "text-slate-600 text-xs",
-              }}
-            />
+              onChange={handleQualificationsChange}
+              className="w-full"
+            >
+              <Label className="text-slate-400 text-sm">Qualifications (comma separated)</Label>
+              <Input
+                placeholder="MBBS, MD, FRCS"
+                className={inputClass}
+              />
+              <p className="text-slate-600 text-xs mt-1">Separate multiple qualifications with commas</p>
+            </TextField>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                type="number"
-                label="Years of Experience"
-                placeholder="10"
+              <TextField
+                name="experience"
                 value={formData.experience}
-                onValueChange={(v) => handleChange("experience", v)}
+                onChange={handleExperienceChange}
                 isInvalid={!!formErrors.experience}
                 errorMessage={formErrors.experience}
-                min="0"
-                classNames={inputClass}
-                startContent={
+                className="w-full"
+              >
+                <Label className="text-slate-400 text-sm">Years of Experience</Label>
+                <div className="relative">
                   <svg
-                    className="w-4 h-4 text-slate-500 shrink-0"
+                    className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -294,21 +294,26 @@ export default function DoctorProfilePage() {
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                }
-              />
-              <Input
-                type="number"
-                label="Consultation Fee ($)"
-                placeholder="150"
+                  <Input
+                    type="number"
+                    placeholder="10"
+                    min="0"
+                    className={`${inputClass} pl-9`}
+                  />
+                </div>
+              </TextField>
+              <TextField
+                name="consultationFee"
                 value={formData.consultationFee}
-                onValueChange={(v) => handleChange("consultationFee", v)}
+                onChange={handleConsultationFeeChange}
                 isInvalid={!!formErrors.consultationFee}
                 errorMessage={formErrors.consultationFee}
-                min="0"
-                classNames={inputClass}
-                startContent={
+                className="w-full"
+              >
+                <Label className="text-slate-400 text-sm">Consultation Fee ($)</Label>
+                <div className="relative">
                   <svg
-                    className="w-4 h-4 text-slate-500 shrink-0"
+                    className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -320,19 +325,26 @@ export default function DoctorProfilePage() {
                       d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                }
-              />
+                  <Input
+                    type="number"
+                    placeholder="150"
+                    min="0"
+                    className={`${inputClass} pl-9`}
+                  />
+                </div>
+              </TextField>
             </div>
 
-            <Input
-              label="Hospital / Clinic Name"
-              placeholder="City General Hospital"
+            <TextField
+              name="hospitalName"
               value={formData.hospitalName}
-              onValueChange={(v) => handleChange("hospitalName", v)}
-              classNames={inputClass}
-              startContent={
+              onChange={handleHospitalNameChange}
+              className="w-full"
+            >
+              <Label className="text-slate-400 text-sm">Hospital / Clinic Name</Label>
+              <div className="relative">
                 <svg
-                  className="w-4 h-4 text-slate-500 shrink-0"
+                  className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -344,18 +356,23 @@ export default function DoctorProfilePage() {
                     d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                   />
                 </svg>
-              }
-            />
+                <Input
+                  placeholder="City General Hospital"
+                  className={`${inputClass} pl-9`}
+                />
+              </div>
+            </TextField>
 
-            <Input
-              label="Profile Image URL"
-              placeholder="https://example.com/photo.jpg"
+            <TextField
+              name="profileImage"
               value={formData.profileImage}
-              onValueChange={(v) => handleChange("profileImage", v)}
-              classNames={inputClass}
-              startContent={
+              onChange={handleProfileImageChange}
+              className="w-full"
+            >
+              <Label className="text-slate-400 text-sm">Profile Image URL</Label>
+              <div className="relative">
                 <svg
-                  className="w-4 h-4 text-slate-500 shrink-0"
+                  className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -367,24 +384,28 @@ export default function DoctorProfilePage() {
                     d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                   />
                 </svg>
-              }
-            />
+                <Input
+                  placeholder="https://example.com/photo.jpg"
+                  className={`${inputClass} pl-9`}
+                />
+              </div>
+            </TextField>
 
             <div className="flex justify-end pt-2">
               <Button
                 type="submit"
-                isLoading={saveLoading}
-                className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold px-8 shadow-lg shadow-cyan-500/20 hover:opacity-90 transition-opacity"
+                isPending={saveLoading}
+                className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold px-8 shadow-lg shadow-cyan-500/20 hover:opacity-90 transition-opacity h-10 rounded-lg"
               >
                 {saveLoading
                   ? "Saving..."
                   : isNew
-                  ? "Create Profile"
-                  : "Save Changes"}
+                    ? "Create Profile"
+                    : "Save Changes"}
               </Button>
             </div>
           </form>
-        </CardBody>
+        </Card.Content>
       </Card>
     </div>
   );

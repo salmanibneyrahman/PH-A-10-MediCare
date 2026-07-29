@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardBody, Button, Avatar } from "@heroui/react";
+import { Card, Button, Avatar } from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
 import {
   getDoctorAppointments,
@@ -100,15 +100,15 @@ export default function DoctorDashboardPage() {
       {/* Welcome */}
       <div className="glass-card border border-white/10 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-        <Avatar
-          src={doctor?.profileImage || user?.image || ""}
-          name={doctor?.doctorName || user?.name || "D"}
-          className="w-16 h-16 ring-4 ring-cyan-500/20 shrink-0"
-          classNames={{
-            base: "bg-gradient-to-br from-cyan-500 to-blue-600",
-            name: "text-white font-black text-xl",
-          }}
-        />
+        <Avatar className="w-16 h-16 ring-4 ring-cyan-500/20 shrink-0">
+          <Avatar.Image
+            src={doctor?.profileImage || user?.image || ""}
+            alt={doctor?.doctorName || user?.name || "Doctor"}
+          />
+          <Avatar.Fallback className="bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-black text-xl">
+            {(doctor?.doctorName || user?.name || "D")[0]}
+          </Avatar.Fallback>
+        </Avatar>
         <div className="flex-1 relative">
           <p className="text-slate-400 text-sm">Welcome back,</p>
           <h1 className="text-2xl font-black text-white">
@@ -136,7 +136,7 @@ export default function DoctorDashboardPage() {
         {statCards.map((stat) => (
           <Link key={stat.label} href={stat.href}>
             <Card className="glass-card border border-white/10 hover:border-white/20 transition-all duration-300 hover-lift cursor-pointer">
-              <CardBody className="p-5 flex flex-col gap-4">
+              <Card.Content className="p-5 flex flex-col gap-4">
                 <div className="flex items-start justify-between">
                   <div
                     className={`w-11 h-11 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg ${stat.glow}`}
@@ -175,7 +175,7 @@ export default function DoctorDashboardPage() {
                   </p>
                   <p className="text-slate-400 text-sm mt-0.5">{stat.label}</p>
                 </div>
-              </CardBody>
+              </Card.Content>
             </Card>
           </Link>
         ))}
@@ -184,7 +184,7 @@ export default function DoctorDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Today's Appointments */}
         <Card className="glass-card border border-white/10">
-          <CardBody className="p-6">
+          <Card.Content className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-white font-bold text-lg">
                 Today&apos;s Appointments
@@ -192,8 +192,7 @@ export default function DoctorDashboardPage() {
               <Button
                 onPress={() => router.push("/dashboard/doctor/appointments")}
                 size="sm"
-                variant="bordered"
-                className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs"
+                className="bg-transparent border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs h-8 px-3 rounded-lg"
               >
                 View All
               </Button>
@@ -252,12 +251,12 @@ export default function DoctorDashboardPage() {
                 ))}
               </div>
             )}
-          </CardBody>
+          </Card.Content>
         </Card>
 
         {/* Recent Reviews */}
         <Card className="glass-card border border-white/10">
-          <CardBody className="p-6">
+          <Card.Content className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-white font-bold text-lg">Recent Reviews</h2>
               <div className="flex items-center gap-2">
@@ -304,7 +303,7 @@ export default function DoctorDashboardPage() {
                 ))}
               </div>
             )}
-          </CardBody>
+          </Card.Content>
         </Card>
       </div>
     </div>

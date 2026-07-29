@@ -1,20 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  Card,
-  CardBody,
-  Button,
-  Input,
-  Textarea,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
-} from "@heroui/react";
+import { Card, Button, TextField, Label, Input, TextArea, Modal } from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
 import {
   getDoctorAppointments,
@@ -31,7 +19,7 @@ export default function DoctorPrescriptionsPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const prefilledId = searchParams.get("appointmentId");
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isOpen, setIsOpen] = useState(false);
 
   const [doctor, setDoctor] = useState(null);
   const [appointments, setAppointments] = useState([]);
@@ -46,6 +34,8 @@ export default function DoctorPrescriptionsPage() {
     notes: "",
   });
   const [formErrors, setFormErrors] = useState({});
+
+  const onClose = useCallback(() => setIsOpen(false), []);
 
   useEffect(() => {
     fetchData();
@@ -109,7 +99,7 @@ export default function DoctorPrescriptionsPage() {
     setModalType("create");
     setFormData({ diagnosis: "", medications: "", notes: "" });
     setFormErrors({});
-    onOpen();
+    setIsOpen(true);
   };
 
   const openEditModal = (apt) => {
@@ -122,7 +112,7 @@ export default function DoctorPrescriptionsPage() {
       notes: pres?.notes || "",
     });
     setFormErrors({});
-    onOpen();
+    setIsOpen(true);
   };
 
   const handleCreate = async () => {
@@ -167,13 +157,29 @@ export default function DoctorPrescriptionsPage() {
     }
   };
 
-  const inputClass = {
-    inputWrapper:
-      "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all data-[invalid=true]:border-red-500/60",
-    input: "text-slate-200 placeholder:text-slate-500 text-sm",
-    label: "text-slate-400 text-sm",
-    errorMessage: "text-red-400 text-xs",
-  };
+  const handleDiagnosisChange = useCallback((value) => {
+    setFormData((p) => ({ ...p, diagnosis: value }));
+    if (formErrors.diagnosis)
+      setFormErrors((p) => ({
+        ...p,
+        diagnosis: "",
+      }));
+  }, [formErrors.diagnosis]);
+
+  const handleMedicationsChange = useCallback((value) => {
+    setFormData((p) => ({ ...p, medications: value }));
+    if (formErrors.medications)
+      setFormErrors((p) => ({
+        ...p,
+        medications: "",
+      }));
+  }, [formErrors.medications]);
+
+  const handleNotesChange = useCallback((value) => {
+    setFormData((p) => ({ ...p, notes: value }));
+  }, []);
+
+  const inputClass = "w-full px-3 py-2 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none data-[invalid=true]:border-red-500/60";
 
   if (loading)
     return <LoadingSpinner text="Loading prescriptions..." />;
@@ -191,7 +197,7 @@ export default function DoctorPrescriptionsPage() {
 
       {appointments.length === 0 ? (
         <Card className="glass-card border border-white/10">
-          <CardBody className="p-16 flex flex-col items-center gap-4 text-center">
+          <Card.Content className="p-16 flex flex-col items-center gap-4 text-center">
             <div className="w-20 h-20 rounded-2xl bg-slate-800 flex items-center justify-center">
               <svg
                 className="w-10 h-10 text-slate-600"
@@ -216,7 +222,7 @@ export default function DoctorPrescriptionsPage() {
                 appointments.
               </p>
             </div>
-          </CardBody>
+          </Card.Content>
         </Card>
       ) : (
         <div className="flex flex-col gap-4">
@@ -225,13 +231,12 @@ export default function DoctorPrescriptionsPage() {
             return (
               <Card
                 key={apt._id}
-                className={`glass-card border transition-all ${
-                  prescription
+                className={`glass-card border transition-all ${prescription
                     ? "border-emerald-500/20"
                     : "border-white/10 hover:border-cyan-500/20"
-                }`}
+                  }`}
               >
-                <CardBody className="p-6">
+                <Card.Content className="p-6">
                   <div className="flex flex-col lg:flex-row gap-4">
                     <div className="flex-1 flex flex-col gap-3">
                       <div className="flex items-center gap-3">
@@ -335,8 +340,8 @@ export default function DoctorPrescriptionsPage() {
                       {!prescription ? (
                         <Button
                           size="sm"
-                          onClick={() => openCreateModal(apt)}
-                          className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold text-xs shadow-lg shadow-cyan-500/20"
+                          onPress={() => openCreateModal(apt)}
+                          className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold text-xs shadow-lg shadow-cyan-500/20 h-8 px-3 rounded-lg"
                           startContent={
                             <svg
                               className="w-3.5 h-3.5"
@@ -358,16 +363,15 @@ export default function DoctorPrescriptionsPage() {
                       ) : (
                         <Button
                           size="sm"
-                          onClick={() => openEditModal(apt)}
-                          variant="bordered"
-                          className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs"
+                          onPress={() => openEditModal(apt)}
+                          className="bg-transparent border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs h-8 px-3 rounded-lg"
                         >
                           Edit Prescription
                         </Button>
                       )}
                     </div>
                   </div>
-                </CardBody>
+                </Card.Content>
               </Card>
             );
           })}
@@ -375,101 +379,91 @@ export default function DoctorPrescriptionsPage() {
       )}
 
       {/* Create/Edit Modal */}
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        size="lg"
-        classNames={{
-          base: "glass-card border border-white/10",
-          header: "border-b border-white/10",
-          body: "py-6",
-          footer: "border-t border-white/10",
-        }}
-      >
-        <ModalContent>
-          <ModalHeader>
-            <div className="flex flex-col gap-1">
-              <h3 className="text-white font-bold text-lg">
-                {modalType === "create"
-                  ? "Create Prescription"
-                  : "Update Prescription"}
-              </h3>
-              {selectedApt && (
-                <p className="text-slate-400 text-sm font-normal">
-                  For {selectedApt.patientName || "Patient"} •{" "}
-                  {selectedApt.appointmentDate}
-                </p>
-              )}
-            </div>
-          </ModalHeader>
-          <ModalBody>
-            <div className="flex flex-col gap-4">
-              <Input
-                label="Diagnosis"
-                placeholder="Enter the diagnosis..."
-                value={formData.diagnosis}
-                onValueChange={(v) => {
-                  setFormData((p) => ({ ...p, diagnosis: v }));
-                  if (formErrors.diagnosis)
-                    setFormErrors((p) => ({
-                      ...p,
-                      diagnosis: "",
-                    }));
-                }}
-                isInvalid={!!formErrors.diagnosis}
-                errorMessage={formErrors.diagnosis}
-                classNames={inputClass}
-              />
-              <Textarea
-                label="Medications"
-                placeholder="List medications, dosages and instructions..."
-                value={formData.medications}
-                onValueChange={(v) => {
-                  setFormData((p) => ({ ...p, medications: v }));
-                  if (formErrors.medications)
-                    setFormErrors((p) => ({
-                      ...p,
-                      medications: "",
-                    }));
-                }}
-                isInvalid={!!formErrors.medications}
-                errorMessage={formErrors.medications}
-                minRows={3}
-                classNames={inputClass}
-              />
-              <Textarea
-                label="Additional Notes (Optional)"
-                placeholder="Any additional instructions or follow-up advice..."
-                value={formData.notes}
-                onValueChange={(v) =>
-                  setFormData((p) => ({ ...p, notes: v }))
-                }
-                minRows={2}
-                classNames={inputClass}
-              />
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="bordered"
-              onPress={onClose}
-              className="border-white/15 text-slate-300 hover:bg-white/5"
-            >
-              Cancel
-            </Button>
-            <Button
-              onPress={
-                modalType === "create" ? handleCreate : handleUpdate
-              }
-              isLoading={actionLoading}
-              className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold shadow-lg shadow-cyan-500/20"
-            >
-              {modalType === "create"
-                ? "Create Prescription"
-                : "Update Prescription"}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
+      <Modal>
+        <Modal.Backdrop isOpen={isOpen} onOpenChange={setIsOpen}>
+          <Modal.Container size="lg">
+            <Modal.Dialog className="glass-card border border-white/10">
+              <Modal.Header className="border-b border-white/10 py-6">
+                <div className="flex flex-col gap-1">
+                  <Modal.Heading className="text-white font-bold text-lg">
+                    {modalType === "create"
+                      ? "Create Prescription"
+                      : "Update Prescription"}
+                  </Modal.Heading>
+                  {selectedApt && (
+                    <p className="text-slate-400 text-sm font-normal">
+                      For {selectedApt.patientName || "Patient"} •{" "}
+                      {selectedApt.appointmentDate}
+                    </p>
+                  )}
+                </div>
+              </Modal.Header>
+              <Modal.Body className="py-6">
+                <div className="flex flex-col gap-4">
+                  <TextField
+                    name="diagnosis"
+                    value={formData.diagnosis}
+                    onChange={handleDiagnosisChange}
+                    isInvalid={!!formErrors.diagnosis}
+                    errorMessage={formErrors.diagnosis}
+                    className="w-full"
+                  >
+                    <Label className="text-slate-400 text-sm">Diagnosis</Label>
+                    <Input
+                      placeholder="Enter the diagnosis..."
+                      className={inputClass}
+                    />
+                  </TextField>
+                  <TextField
+                    name="medications"
+                    value={formData.medications}
+                    onChange={handleMedicationsChange}
+                    isInvalid={!!formErrors.medications}
+                    errorMessage={formErrors.medications}
+                    className="w-full"
+                  >
+                    <Label className="text-slate-400 text-sm">Medications</Label>
+                    <TextArea
+                      placeholder="List medications, dosages and instructions..."
+                      className={`${inputClass} min-h-[80px] resize-none`}
+                    />
+                  </TextField>
+                  <TextField
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleNotesChange}
+                    className="w-full"
+                  >
+                    <Label className="text-slate-400 text-sm">Additional Notes (Optional)</Label>
+                    <TextArea
+                      placeholder="Any additional instructions or follow-up advice..."
+                      className={`${inputClass} min-h-[60px] resize-none`}
+                    />
+                  </TextField>
+                </div>
+              </Modal.Body>
+              <Modal.Footer className="border-t border-white/10">
+                <Button
+                  onPress={onClose}
+                  className="bg-transparent border border-white/15 text-slate-300 hover:bg-white/5 h-9 px-4 rounded-lg"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onPress={
+                    modalType === "create" ? handleCreate : handleUpdate
+                  }
+                  isPending={actionLoading}
+                  className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold shadow-lg shadow-cyan-500/20 h-9 px-4 rounded-lg"
+                >
+                  {modalType === "create"
+                    ? "Create Prescription"
+                    : "Update Prescription"}
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
       </Modal>
     </div>
   );
