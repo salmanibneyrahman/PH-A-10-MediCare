@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Card, Button, Chip, Avatar } from "@heroui/react";
 import StarRating from "./StarRating";
 import { useRouter } from "next/navigation";
@@ -17,8 +16,20 @@ export default function DoctorCard({ doctor }) {
         averageRating,
         totalReviews,
         availableDays,
+        qualifications,
+        verificationStatus,
     } = doctor;
     const router = useRouter();
+
+    const isPending = verificationStatus === "pending";
+
+    // The API stores qualifications as an array, but older records may
+    // still hold a plain comma-separated string.
+    const qualificationList = Array.isArray(qualifications)
+        ? qualifications.filter(Boolean)
+        : typeof qualifications === "string" && qualifications.trim()
+            ? qualifications.split(",").map((q) => q.trim()).filter(Boolean)
+            : [];
 
     return (
         <Card className="glass-card border border-white/10 hover:border-cyan-500/30 transition-all duration-300 hover-lift overflow-hidden group">
@@ -30,15 +41,19 @@ export default function DoctorCard({ doctor }) {
                     {/* Doctor Header */}
                     <div className="flex items-start gap-4">
                         <div className="relative shrink-0">
-                            <Avatar
-                                src={profileImage}
-                                name={doctorName}
-                                className="w-16 h-16 text-lg ring-2 ring-cyan-500/30 group-hover:ring-cyan-500/60 transition-all"
-                                classNames={{
-                                    base: "bg-gradient-to-br from-cyan-500 to-indigo-600",
-                                    name: "text-white font-bold text-lg",
-                                }}
-                            />
+                            <Avatar className="w-16 h-16 text-lg ring-2 ring-cyan-500/30 group-hover:ring-cyan-500/60 transition-all">
+                                {/* Only render the image when there is a real URL —
+                                    an empty src makes the browser refetch the page. */}
+                                {profileImage ? (
+                                    <Avatar.Image
+                                        src={profileImage}
+                                        alt={doctorName || "Doctor"}
+                                    />
+                                ) : null}
+                                <Avatar.Fallback className="bg-gradient-to-br from-cyan-500 to-indigo-600 text-white font-bold text-lg">
+                                    {doctorName?.[0]?.toUpperCase() || "D"}
+                                </Avatar.Fallback>
+                            </Avatar>
                             <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#0a0f1e]" />
                         </div>
 
@@ -46,15 +61,56 @@ export default function DoctorCard({ doctor }) {
                             <h3 className="text-white font-bold text-base truncate leading-tight">
                                 {doctorName}
                             </h3>
-                            <Chip
-                                size="sm"
-                                className="mt-1 bg-cyan-500/15 text-cyan-400 border border-cyan-500/20 text-xs"
-                                variant="flat"
-                            >
-                                {specialization}
-                            </Chip>
+                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                <Chip
+                                    size="sm"
+                                    className="bg-cyan-500/15 text-cyan-400 border border-cyan-500/20 text-xs"
+                                >
+                                    {specialization}
+                                </Chip>
+                                {isPending && (
+                                    <Chip
+                                        size="sm"
+                                        className="bg-amber-500/15 text-amber-400 border border-amber-500/20 text-xs"
+                                    >
+                                        Pending
+                                    </Chip>
+                                )}
+                            </div>
                         </div>
                     </div>
+
+                    {/* Qualifications */}
+                    {qualificationList.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <svg
+                                className="w-3.5 h-3.5 text-slate-500 shrink-0"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"
+                                />
+                            </svg>
+                            {qualificationList.slice(0, 3).map((q) => (
+                                <span
+                                    key={q}
+                                    className="text-xs px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
+                                >
+                                    {q}
+                                </span>
+                            ))}
+                            {qualificationList.length > 3 && (
+                                <span className="text-xs px-2 py-0.5 rounded-md bg-white/5 text-slate-400">
+                                    +{qualificationList.length - 3}
+                                </span>
+                            )}
+                        </div>
+                    )}
 
                     {/* Stats Row */}
                     <div className="grid grid-cols-3 gap-2">
@@ -151,13 +207,24 @@ export default function DoctorCard({ doctor }) {
                     )}
 
                     {/* Action Button */}
-                    <Button
-                        onPress={() => router.push(`/find-doctors/${_id}`)}
-                        className="w-full bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold shadow-lg shadow-cyan-500/20 hover:opacity-90 transition-opacity"
-                        size="sm"
-                    >
-                        View Profile & Book
-                    </Button>
+                    {isPending ? (
+                        <div className="w-full text-center py-2 rounded-lg bg-white/5 border border-amber-500/20">
+                            <p className="text-amber-400 text-xs font-semibold">
+                                Awaiting verification
+                            </p>
+                            <p className="text-slate-500 text-[11px]">
+                                Booking opens once an admin approves
+                            </p>
+                        </div>
+                    ) : (
+                        <Button
+                            onPress={() => router.push(`/find-doctors/${_id}`)}
+                            className="w-full bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold shadow-lg shadow-cyan-500/20 hover:opacity-90 transition-opacity h-9 rounded-lg"
+                            size="sm"
+                        >
+                            View Profile &amp; Book
+                        </Button>
+                    )}
                 </div>
             </Card.Content>
         </Card>

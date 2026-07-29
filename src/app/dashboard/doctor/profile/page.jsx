@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Card, Input, Button, Avatar, Select, ListBox, TextField, Label } from "@heroui/react";
+import {
+  Card,
+  Input,
+  Button,
+  Avatar,
+  Select,
+  ListBox,
+  TextField,
+  Label,
+  FieldError,
+} from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
 import { getDoctorByEmail, updateDoctor, createDoctor } from "@/lib/api";
 import StatusBadge from "@/components/StatusBadge";
@@ -15,7 +25,7 @@ const SPECIALIZATIONS = [
 ];
 
 export default function DoctorProfilePage() {
-  const { user, dbUser } = useAuth();
+  const { user, dbUser, avatarUrl } = useAuth();
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -32,11 +42,7 @@ export default function DoctorProfilePage() {
   });
   const [formErrors, setFormErrors] = useState({});
 
-  useEffect(() => {
-    fetchDoctor();
-  }, [user]);
-
-  async function fetchDoctor() {
+  const fetchDoctor = useCallback(async () => {
     if (!user?.email) return;
     setLoading(true);
     try {
@@ -52,16 +58,29 @@ export default function DoctorProfilePage() {
         experience: doc.experience?.toString() || "",
         consultationFee: doc.consultationFee?.toString() || "",
         hospitalName: doc.hospitalName || "",
-        profileImage: doc.profileImage || "",
+        // Fall back to the photo saved at registration so the field is
+        // never blank just because the doctor profile was made later.
+        profileImage: doc.profileImage || dbUser?.photo || user.image || "",
         email: user.email,
       });
     } catch {
+      // 404 — no doctor profile yet. Prefill from the account so the
+      // registration name/photo carry over instead of starting empty.
       setIsNew(true);
-      setFormData((p) => ({ ...p, email: user.email, doctorName: user.name || "" }));
+      setFormData((p) => ({
+        ...p,
+        email: user.email,
+        doctorName: dbUser?.name || user.name || "",
+        profileImage: dbUser?.photo || user.image || "",
+      }));
     } finally {
       setLoading(false);
     }
-  }
+  }, [user?.email, user?.name, user?.image, dbUser?.name, dbUser?.photo]);
+
+  useEffect(() => {
+    fetchDoctor();
+  }, [fetchDoctor]);
 
   const validate = () => {
     const errs = {};
@@ -79,8 +98,8 @@ export default function DoctorProfilePage() {
 
   const handleChange = useCallback((field, value) => {
     setFormData((p) => ({ ...p, [field]: value }));
-    if (formErrors[field]) setFormErrors((p) => ({ ...p, [field]: "" }));
-  }, [formErrors]);
+    setFormErrors((p) => (p[field] ? { ...p, [field]: "" } : p));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -111,10 +130,10 @@ export default function DoctorProfilePage() {
     }
   };
 
-  const inputClass = "w-full h-10 px-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none data-[invalid=true]:border-red-500/60";
+  const inputClass = "w-full h-10 px-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none";
 
   const handleDoctorNameChange = useCallback((value) => handleChange("doctorName", value), [handleChange]);
-  const handleSpecializationChange = useCallback((keys) => handleChange("specialization", Array.from(keys)[0] || ""), [handleChange]);
+  const handleSpecializationChange = useCallback((key) => handleChange("specialization", key || ""), [handleChange]);
   const handleQualificationsChange = useCallback((value) => handleChange("qualifications", value), [handleChange]);
   const handleExperienceChange = useCallback((value) => handleChange("experience", value), [handleChange]);
   const handleConsultationFeeChange = useCallback((value) => handleChange("consultationFee", value), [handleChange]);
@@ -143,11 +162,11 @@ export default function DoctorProfilePage() {
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
               <Avatar className="w-24 h-24 ring-4 ring-cyan-500/20">
                 <Avatar.Image
-                  src={doctor.profileImage || ""}
+                  src={doctor.profileImage || avatarUrl || ""}
                   alt={doctor.doctorName || "Doctor"}
                 />
                 <Avatar.Fallback className="bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-black text-2xl">
-                  {(doctor.doctorName || "D")[0]}
+                  {(doctor.doctorName || "D")[0]?.toUpperCase()}
                 </Avatar.Fallback>
               </Avatar>
               <div className="flex flex-col gap-2 text-center sm:text-left flex-1">
@@ -213,46 +232,50 @@ export default function DoctorProfilePage() {
                 value={formData.doctorName}
                 onChange={handleDoctorNameChange}
                 isInvalid={!!formErrors.doctorName}
-                errorMessage={formErrors.doctorName}
                 className="w-full"
               >
-                <Label className="text-slate-400 text-sm">Full Name</Label>
+                <Label className="text-slate-400 text-sm mb-1.5 block">Full Name</Label>
                 <Input
                   placeholder="Dr. John Smith"
                   className={inputClass}
                 />
+                {formErrors.doctorName && (
+                  <FieldError className="text-red-400 text-xs mt-1">
+                    {formErrors.doctorName}
+                  </FieldError>
+                )}
               </TextField>
+
               <Select
-                selectedKeys={
-                  formData.specialization ? [formData.specialization] : []
-                }
-                onSelectionChange={handleSpecializationChange}
-                isInvalid={!!formErrors.specialization}
-                errorMessage={formErrors.specialization}
-                classNames={{
-                  trigger:
-                    "bg-white/5 border border-white/10 hover:border-cyan-500/40 data-[focus=true]:border-cyan-500 transition-all data-[invalid=true]:border-red-500/60 h-10",
-                  value: "text-slate-200 text-sm",
-                  popoverContent: "bg-[#0d1b2a] border border-white/10",
-                }}
+                className="w-full"
+                placeholder="Select specialization"
+                value={formData.specialization || null}
+                onChange={handleSpecializationChange}
               >
-                <Label className="text-slate-400 text-sm mb-1">Specialization</Label>
-                <Select.Trigger>
-                  <Select.Value placeholder="Select specialization" />
+                <Label className="text-slate-400 text-sm mb-1.5 block">Specialization</Label>
+                <Select.Trigger className="w-full h-10 px-3 flex items-center justify-between gap-2 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 text-sm transition-all focus:outline-none">
+                  <Select.Value />
                   <Select.Indicator />
                 </Select.Trigger>
-                <Select.Popover>
+                <Select.Popover className="bg-[#0d1b2a] border border-white/10 rounded-xl p-1 max-h-64 overflow-y-auto">
                   <ListBox>
                     {SPECIALIZATIONS.map((s) => (
                       <ListBox.Item
                         key={s}
-                        className="text-slate-300 hover:bg-white/5 data-[hover=true]:bg-white/5"
+                        id={s}
+                        textValue={s}
+                        className="text-slate-300 text-sm px-3 py-2 rounded-lg cursor-pointer outline-none data-[hovered]:bg-white/5 data-[focused]:bg-white/5"
                       >
                         {s}
                       </ListBox.Item>
                     ))}
                   </ListBox>
                 </Select.Popover>
+                {formErrors.specialization && (
+                  <p className="text-red-400 text-xs mt-1">
+                    {formErrors.specialization}
+                  </p>
+                )}
               </Select>
             </div>
 
@@ -262,7 +285,7 @@ export default function DoctorProfilePage() {
               onChange={handleQualificationsChange}
               className="w-full"
             >
-              <Label className="text-slate-400 text-sm">Qualifications (comma separated)</Label>
+              <Label className="text-slate-400 text-sm mb-1.5 block">Qualifications (comma separated)</Label>
               <Input
                 placeholder="MBBS, MD, FRCS"
                 className={inputClass}
@@ -273,13 +296,13 @@ export default function DoctorProfilePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <TextField
                 name="experience"
+                type="number"
                 value={formData.experience}
                 onChange={handleExperienceChange}
                 isInvalid={!!formErrors.experience}
-                errorMessage={formErrors.experience}
                 className="w-full"
               >
-                <Label className="text-slate-400 text-sm">Years of Experience</Label>
+                <Label className="text-slate-400 text-sm mb-1.5 block">Years of Experience</Label>
                 <div className="relative">
                   <svg
                     className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -295,22 +318,27 @@ export default function DoctorProfilePage() {
                     />
                   </svg>
                   <Input
-                    type="number"
                     placeholder="10"
                     min="0"
                     className={`${inputClass} pl-9`}
                   />
                 </div>
+                {formErrors.experience && (
+                  <FieldError className="text-red-400 text-xs mt-1">
+                    {formErrors.experience}
+                  </FieldError>
+                )}
               </TextField>
+
               <TextField
                 name="consultationFee"
+                type="number"
                 value={formData.consultationFee}
                 onChange={handleConsultationFeeChange}
                 isInvalid={!!formErrors.consultationFee}
-                errorMessage={formErrors.consultationFee}
                 className="w-full"
               >
-                <Label className="text-slate-400 text-sm">Consultation Fee ($)</Label>
+                <Label className="text-slate-400 text-sm mb-1.5 block">Consultation Fee ($)</Label>
                 <div className="relative">
                   <svg
                     className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -326,12 +354,16 @@ export default function DoctorProfilePage() {
                     />
                   </svg>
                   <Input
-                    type="number"
                     placeholder="150"
                     min="0"
                     className={`${inputClass} pl-9`}
                   />
                 </div>
+                {formErrors.consultationFee && (
+                  <FieldError className="text-red-400 text-xs mt-1">
+                    {formErrors.consultationFee}
+                  </FieldError>
+                )}
               </TextField>
             </div>
 
@@ -341,7 +373,7 @@ export default function DoctorProfilePage() {
               onChange={handleHospitalNameChange}
               className="w-full"
             >
-              <Label className="text-slate-400 text-sm">Hospital / Clinic Name</Label>
+              <Label className="text-slate-400 text-sm mb-1.5 block">Hospital / Clinic Name</Label>
               <div className="relative">
                 <svg
                   className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -369,7 +401,7 @@ export default function DoctorProfilePage() {
               onChange={handleProfileImageChange}
               className="w-full"
             >
-              <Label className="text-slate-400 text-sm">Profile Image URL</Label>
+              <Label className="text-slate-400 text-sm mb-1.5 block">Profile Image URL</Label>
               <div className="relative">
                 <svg
                   className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -389,6 +421,22 @@ export default function DoctorProfilePage() {
                   className={`${inputClass} pl-9`}
                 />
               </div>
+              {formData.profileImage && (
+                <div className="flex items-center gap-3 mt-2 p-2.5 rounded-xl bg-white/5 border border-white/10">
+                  <Avatar size="sm" className="shrink-0">
+                    <Avatar.Image
+                      src={formData.profileImage}
+                      alt="Profile preview"
+                    />
+                    <Avatar.Fallback className="bg-gradient-to-br from-cyan-500 to-blue-600 text-white text-xs font-bold">
+                      {(formData.doctorName || "D")[0]?.toUpperCase()}
+                    </Avatar.Fallback>
+                  </Avatar>
+                  <p className="text-slate-400 text-xs">
+                    This image appears on your Find Doctors listing.
+                  </p>
+                </div>
+              )}
             </TextField>
 
             <div className="flex justify-end pt-2">

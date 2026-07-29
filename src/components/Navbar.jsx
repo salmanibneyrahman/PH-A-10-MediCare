@@ -54,6 +54,12 @@ export default function AppNavbar() {
         return "/dashboard/patient";
     };
 
+    const getProfileLink = () => {
+        if (dbUser?.role === "admin") return "/dashboard/admin/profile";
+        if (dbUser?.role === "doctor") return "/dashboard/doctor/profile";
+        return "/dashboard/patient/profile";
+    };
+
     const getRoleBadgeColor = () => {
         if (dbUser?.role === "admin") return "bg-red-500/15 text-red-400 border border-red-500/20";
         if (dbUser?.role === "doctor") return "bg-blue-500/15 text-blue-400 border border-blue-500/20";
@@ -62,11 +68,10 @@ export default function AppNavbar() {
 
     return (
         <nav
-            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-                scrolled
+            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
                     ? "bg-[#0a0f1e]/90 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/20"
                     : "bg-transparent"
-            }`}
+                }`}
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
                 <div className="flex items-center justify-between h-16">
@@ -119,11 +124,10 @@ export default function AppNavbar() {
                             <Link
                                 key={link.href}
                                 href={link.href}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                    pathname === link.href
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${pathname === link.href
                                         ? "text-cyan-400 bg-cyan-500/10 border border-cyan-500/20"
                                         : "text-slate-300 hover:text-cyan-400 hover:bg-white/5"
-                                }`}
+                                    }`}
                             >
                                 {link.label}
                             </Link>
@@ -189,7 +193,7 @@ export default function AppNavbar() {
 
                                                     {/* My Profile */}
                                                     <Link
-                                                        href="/dashboard/patient/profile"
+                                                        href={getProfileLink()}
                                                         onClick={() => setIsDropdownOpen(false)}
                                                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 transition-all"
                                                     >
@@ -249,11 +253,10 @@ export default function AppNavbar() {
                                 key={link.href}
                                 href={link.href}
                                 onClick={() => setIsMenuOpen(false)}
-                                className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                                    pathname === link.href
+                                className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${pathname === link.href
                                         ? "text-cyan-400 bg-cyan-500/10 border border-cyan-500/20"
                                         : "text-slate-300 hover:text-cyan-400 hover:bg-white/5"
-                                }`}
+                                    }`}
                             >
                                 {link.label}
                             </Link>
