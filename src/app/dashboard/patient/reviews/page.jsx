@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Card,
   Button,
+  TextField,
+  Label,
   TextArea,
+  FieldError,
   Modal,
-  Avatar,
 } from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -15,7 +17,6 @@ import {
   updateReview,
   deleteReview,
   getPatientAppointments,
-  getDoctorById,
 } from "@/lib/api";
 import StarRating from "@/components/StarRating";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -39,14 +40,9 @@ export default function PatientReviewsPage() {
   });
   const [formErrors, setFormErrors] = useState({});
 
-  const onOpen = () => setIsOpen(true);
-  const onClose = () => setIsOpen(false);
+  const onClose = useCallback(() => setIsOpen(false), []);
 
-  useEffect(() => {
-    fetchData();
-  }, [dbUser]);
-
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     if (!dbUser?._id) return;
     setLoading(true);
     try {
@@ -78,7 +74,11 @@ export default function PatientReviewsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [dbUser?._id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const validate = () => {
     const errs = {};
@@ -93,6 +93,17 @@ export default function PatientReviewsPage() {
     return Object.keys(errs).length === 0;
   };
 
+  // v3 TextArea hands back a plain string, not an event.
+  const handleReviewTextChange = useCallback((value) => {
+    setFormData((p) => ({ ...p, reviewText: value }));
+    setFormErrors((p) => (p.reviewText ? { ...p, reviewText: "" } : p));
+  }, []);
+
+  const handleRate = useCallback((r) => {
+    setFormData((p) => ({ ...p, rating: r }));
+    setFormErrors((p) => (p.rating ? { ...p, rating: "" } : p));
+  }, []);
+
   const openAddModal = () => {
     setModalType("add");
     setFormData({
@@ -103,7 +114,7 @@ export default function PatientReviewsPage() {
       reviewText: "",
     });
     setFormErrors({});
-    onOpen();
+    setIsOpen(true);
   };
 
   const openEditModal = (review) => {
@@ -117,13 +128,13 @@ export default function PatientReviewsPage() {
       reviewText: review.reviewText,
     });
     setFormErrors({});
-    onOpen();
+    setIsOpen(true);
   };
 
   const openDeleteModal = (review) => {
     setSelectedReview(review);
     setModalType("delete");
-    onOpen();
+    setIsOpen(true);
   };
 
   const handleAdd = async () => {
@@ -194,24 +205,22 @@ export default function PatientReviewsPage() {
         </div>
         {completedDoctors.length > 0 && (
           <Button
-            onClick={openAddModal}
-            className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold shadow-lg shadow-cyan-500/20"
-            startContent={
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-            }
+            onPress={openAddModal}
+            className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold shadow-lg shadow-cyan-500/20 h-10 px-4 rounded-xl flex items-center gap-2"
           >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
             Add Review
           </Button>
         )}
@@ -236,9 +245,7 @@ export default function PatientReviewsPage() {
               </svg>
             </div>
             <div>
-              <p className="text-white font-bold text-lg">
-                No Reviews Yet
-              </p>
+              <p className="text-white font-bold text-lg">No Reviews Yet</p>
               <p className="text-slate-400 text-sm mt-1">
                 {completedDoctors.length > 0
                   ? "Share your experience with doctors you have visited."
@@ -247,8 +254,8 @@ export default function PatientReviewsPage() {
             </div>
             {completedDoctors.length > 0 && (
               <Button
-                onClick={openAddModal}
-                className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold"
+                onPress={openAddModal}
+                className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold h-10 px-5 rounded-xl"
               >
                 Write a Review
               </Button>
@@ -266,7 +273,7 @@ export default function PatientReviewsPage() {
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center shrink-0">
                     <span className="text-white font-bold text-lg">
-                      {(review.doctorName || "D")[0]}
+                      {(review.doctorName || "D")[0]?.toUpperCase()}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -279,17 +286,15 @@ export default function PatientReviewsPage() {
                       <div className="flex items-center gap-2">
                         <Button
                           size="sm"
-                          variant="bordered"
-                          className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs"
-                          onClick={() => openEditModal(review)}
+                          onPress={() => openEditModal(review)}
+                          className="bg-transparent border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs h-8 px-3 rounded-lg"
                         >
                           Edit
                         </Button>
                         <Button
                           size="sm"
-                          variant="bordered"
-                          className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
-                          onClick={() => openDeleteModal(review)}
+                          onPress={() => openDeleteModal(review)}
+                          className="bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs h-8 px-3 rounded-lg"
                         >
                           Delete
                         </Button>
@@ -301,13 +306,14 @@ export default function PatientReviewsPage() {
                         {review.rating}/5
                       </span>
                       <span className="text-slate-500 text-xs">
-                        {new Date(
-                          review.createdAt
-                        ).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
+                        {new Date(review.createdAt).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          }
+                        )}
                       </span>
                     </div>
                     <p className="text-slate-300 text-sm leading-relaxed mt-3 p-3 rounded-xl bg-white/5 border border-white/5">
@@ -322,22 +328,20 @@ export default function PatientReviewsPage() {
       )}
 
       {/* Add/Edit Modal */}
-      <Modal
-        isOpen={
-          isOpen && (modalType === "add" || modalType === "edit")
-        }
-        onClose={onClose}
-      >
-        <Modal.Backdrop>
-          <Modal.Container>
-            <Modal.Dialog>
-              <Modal.Header>
-                <Modal.Heading>
+      <Modal>
+        <Modal.Backdrop
+          isOpen={isOpen && (modalType === "add" || modalType === "edit")}
+          onOpenChange={setIsOpen}
+        >
+          <Modal.Container size="md">
+            <Modal.Dialog className="bg-[#0d1b2a] border border-white/15">
+              <Modal.Header className="border-b border-white/10">
+                <Modal.Heading className="text-white font-bold">
                   {modalType === "add" ? "Write a Review" : "Edit Review"}
                 </Modal.Heading>
               </Modal.Header>
               <Modal.Body>
-                <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-5 py-1">
                   {modalType === "add" && (
                     <div className="flex flex-col gap-2">
                       <label className="text-slate-400 text-sm font-medium">
@@ -361,14 +365,15 @@ export default function PatientReviewsPage() {
                                   appointmentId: doc.appointmentId,
                                 }))
                               }
-                              className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${formData.doctorId === doc.doctorId
-                                ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-400"
-                                : "bg-white/5 border-white/10 text-slate-300 hover:border-white/20"
-                                }`}
+                              className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                                formData.doctorId === doc.doctorId
+                                  ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-400"
+                                  : "bg-white/5 border-white/10 text-slate-300 hover:border-white/20"
+                              }`}
                             >
                               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-indigo-600/20 flex items-center justify-center shrink-0">
                                 <span className="text-cyan-400 font-bold text-sm">
-                                  {(doc.doctorName || "D")[0]}
+                                  {(doc.doctorName || "D")[0]?.toUpperCase()}
                                 </span>
                               </div>
                               <div>
@@ -415,21 +420,20 @@ export default function PatientReviewsPage() {
                         rating={formData.rating}
                         size="lg"
                         interactive
-                        onRate={(r) =>
-                          setFormData((p) => ({ ...p, rating: r }))
-                        }
+                        onRate={handleRate}
                       />
                       <span className="text-slate-300 text-sm font-medium">
                         {formData.rating > 0
-                          ? `${formData.rating}/5 — ${[
-                            "",
-                            "Poor",
-                            "Fair",
-                            "Good",
-                            "Very Good",
-                            "Excellent",
-                          ][formData.rating]
-                          }`
+                          ? `${formData.rating}/5 — ${
+                              [
+                                "",
+                                "Poor",
+                                "Fair",
+                                "Good",
+                                "Very Good",
+                                "Excellent",
+                              ][formData.rating]
+                            }`
                           : "Click to rate"}
                       </span>
                     </div>
@@ -440,33 +444,30 @@ export default function PatientReviewsPage() {
                     )}
                   </div>
 
-                  <TextArea
-                    label="Your Review"
-                    placeholder="Share your experience with this doctor..."
+                  <TextField
+                    name="reviewText"
                     value={formData.reviewText}
-                    onValueChange={(val) => {
-                      setFormData((p) => ({ ...p, reviewText: val }));
-                      if (formErrors.reviewText)
-                        setFormErrors((p) => ({
-                          ...p,
-                          reviewText: "",
-                        }));
-                    }}
+                    onChange={handleReviewTextChange}
                     isInvalid={!!formErrors.reviewText}
-                    errorMessage={formErrors.reviewText}
-                    minRows={4}
-                    classNames={{
-                      inputWrapper:
-                        "bg-white/5 border border-white/10 hover:border-cyan-500/40 focus-within:border-cyan-500 transition-all data-[invalid=true]:border-red-500/60",
-                      input:
-                        "text-slate-200 placeholder:text-slate-500 text-sm",
-                      label: "text-slate-400 text-sm",
-                      errorMessage: "text-red-400 text-xs",
-                    }}
-                  />
+                    className="w-full"
+                  >
+                    <Label className="text-slate-400 text-sm mb-1.5 block">
+                      Your Review
+                    </Label>
+                    <TextArea
+                      placeholder="Share your experience with this doctor..."
+                      rows={4}
+                      className="w-full p-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none resize-none"
+                    />
+                    {formErrors.reviewText && (
+                      <FieldError className="text-red-400 text-xs mt-1">
+                        {formErrors.reviewText}
+                      </FieldError>
+                    )}
+                  </TextField>
                 </div>
               </Modal.Body>
-              <Modal.Footer>
+              <Modal.Footer className="border-t border-white/10">
                 <button
                   type="button"
                   onClick={onClose}
@@ -480,7 +481,11 @@ export default function PatientReviewsPage() {
                   disabled={actionLoading}
                   className="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
                 >
-                  {actionLoading ? "Submitting..." : modalType === "add" ? "Submit Review" : "Update Review"}
+                  {actionLoading
+                    ? "Submitting..."
+                    : modalType === "add"
+                      ? "Submit Review"
+                      : "Update Review"}
                 </button>
               </Modal.Footer>
             </Modal.Dialog>
@@ -489,15 +494,17 @@ export default function PatientReviewsPage() {
       </Modal>
 
       {/* Delete Modal */}
-      <Modal
-        isOpen={isOpen && modalType === "delete"}
-        onClose={onClose}
-      >
-        <Modal.Backdrop>
-          <Modal.Container>
-            <Modal.Dialog>
-              <Modal.Header>
-                <Modal.Heading>Delete Review</Modal.Heading>
+      <Modal>
+        <Modal.Backdrop
+          isOpen={isOpen && modalType === "delete"}
+          onOpenChange={setIsOpen}
+        >
+          <Modal.Container size="sm">
+            <Modal.Dialog className="bg-[#0d1b2a] border border-white/15">
+              <Modal.Header className="border-b border-white/10">
+                <Modal.Heading className="text-white font-bold">
+                  Delete Review
+                </Modal.Heading>
               </Modal.Header>
               <Modal.Body>
                 <p className="text-slate-400 text-sm py-2">
@@ -508,7 +515,7 @@ export default function PatientReviewsPage() {
                   ? This action cannot be undone.
                 </p>
               </Modal.Body>
-              <Modal.Footer>
+              <Modal.Footer className="border-t border-white/10">
                 <button
                   type="button"
                   onClick={onClose}

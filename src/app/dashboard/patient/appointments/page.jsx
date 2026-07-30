@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -17,6 +17,7 @@ import {
 } from "@/lib/api";
 import StatusBadge from "@/components/StatusBadge";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import PaymentModal from "@/components/PaymentModal";
 import { toast } from "react-toastify";
 
 const TIME_SLOTS = [
@@ -39,33 +40,31 @@ export default function PatientAppointmentsPage() {
   const [selectedApt, setSelectedApt] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [modalType, setModalType] = useState("");
+  const [payingFor, setPayingFor] = useState(null);
   const [rescheduleData, setRescheduleData] = useState({
     appointmentDate: "",
     appointmentTime: "",
   });
   const [activeFilter, setActiveFilter] = useState("all");
 
-  const onOpen = () => setIsOpen(true);
-  const onClose = () => setIsOpen(false);
+  const onClose = useCallback(() => setIsOpen(false), []);
 
-  useEffect(() => {
-    fetchAppointments();
-  }, [dbUser]);
-
-  async function fetchAppointments() {
+  const fetchAppointments = useCallback(async () => {
     if (!dbUser?._id) return;
     setLoading(true);
     try {
-      const data = await getPatientAppointments(
-        dbUser._id.toString()
-      );
+      const data = await getPatientAppointments(dbUser._id.toString());
       setAppointments(data || []);
     } catch {
       toast.error("Failed to load appointments");
     } finally {
       setLoading(false);
     }
-  }
+  }, [dbUser?._id]);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
 
   const openModal = (apt, type) => {
     setSelectedApt(apt);
@@ -76,8 +75,13 @@ export default function PatientAppointmentsPage() {
         appointmentTime: apt.appointmentTime || "",
       });
     }
-    onOpen();
+    setIsOpen(true);
   };
+
+  const handleTimeChange = useCallback((key) => {
+    // v3 hands us the key as a plain string — no Set, no Array.from.
+    setRescheduleData((p) => ({ ...p, appointmentTime: key || "" }));
+  }, []);
 
   const handleCancel = async () => {
     if (!selectedApt) return;
@@ -96,10 +100,7 @@ export default function PatientAppointmentsPage() {
 
   const handleReschedule = async () => {
     if (!selectedApt) return;
-    if (
-      !rescheduleData.appointmentDate ||
-      !rescheduleData.appointmentTime
-    ) {
+    if (!rescheduleData.appointmentDate || !rescheduleData.appointmentTime) {
       toast.error("Please select a date and time");
       return;
     }
@@ -127,20 +128,15 @@ export default function PatientAppointmentsPage() {
   const filtered =
     activeFilter === "all"
       ? appointments
-      : appointments.filter(
-        (a) => a.appointmentStatus === activeFilter
-      );
+      : appointments.filter((a) => a.appointmentStatus === activeFilter);
 
-  if (loading)
-    return <LoadingSpinner text="Loading your appointments..." />;
+  if (loading) return <LoadingSpinner text="Loading your appointments..." />;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white">
-            My Appointments
-          </h1>
+          <h1 className="text-2xl font-black text-white">My Appointments</h1>
           <p className="text-slate-400 text-sm mt-1">
             Manage and track all your appointments
           </p>
@@ -158,15 +154,17 @@ export default function PatientAppointmentsPage() {
         {statusFilters.map((f) => (
           <button
             key={f}
+            type="button"
             onClick={() => setActiveFilter(f)}
             className={`flex-1 min-w-fit px-4 py-2 rounded-lg text-xs font-semibold capitalize transition-all whitespace-nowrap ${activeFilter === f
-              ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-lg"
-              : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-lg"
+                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
               }`}
           >
             {f === "all"
               ? `All (${appointments.length})`
-              : `${f} (${appointments.filter((a) => a.appointmentStatus === f).length})`}
+              : `${f} (${appointments.filter((a) => a.appointmentStatus === f).length
+              })`}
           </button>
         ))}
       </div>
@@ -202,7 +200,7 @@ export default function PatientAppointmentsPage() {
             {activeFilter === "all" && (
               <Button
                 onPress={() => router.push("/find-doctors")}
-                className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold"
+                className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold h-10 px-5 rounded-xl"
               >
                 Find a Doctor
               </Button>
@@ -256,14 +254,15 @@ export default function PatientAppointmentsPage() {
                               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                             />
                           </svg>
-                          {new Date(
-                            apt.appointmentDate
-                          ).toLocaleDateString("en-US", {
-                            weekday: "short",
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
+                          {new Date(apt.appointmentDate).toLocaleDateString(
+                            "en-US",
+                            {
+                              weekday: "short",
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            }
+                          )}
                         </span>
                         <span className="text-slate-500 text-xs flex items-center gap-1">
                           <svg
@@ -292,9 +291,7 @@ export default function PatientAppointmentsPage() {
 
                   {apt.symptoms && (
                     <div className="hidden lg:block max-w-xs">
-                      <p className="text-slate-500 text-xs mb-1">
-                        Symptoms
-                      </p>
+                      <p className="text-slate-500 text-xs mb-1">Symptoms</p>
                       <p className="text-slate-300 text-sm line-clamp-2">
                         {apt.symptoms}
                       </p>
@@ -306,32 +303,46 @@ export default function PatientAppointmentsPage() {
                       <StatusBadge status={apt.appointmentStatus} />
                       <StatusBadge status={apt.paymentStatus} />
                     </div>
+
+                    {/* Pay Now — unpaid and not cancelled */}
+                    {apt.paymentStatus !== "paid" &&
+                      apt.appointmentStatus !== "cancelled" && (
+                        <Button
+                          size="sm"
+                          onPress={() => setPayingFor(apt)}
+                          className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold text-xs h-8 px-4 rounded-lg shadow-lg shadow-emerald-500/20"
+                        >
+                          Pay ${apt.consultationFee}
+                        </Button>
+                      )}
+
                     {(apt.appointmentStatus === "pending" ||
                       apt.appointmentStatus === "confirmed") && (
                         <div className="flex gap-2">
                           <Button
                             size="sm"
-                            variant="bordered"
-                            className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs"
-                            onClick={() => openModal(apt, "reschedule")}
+                            onPress={() => openModal(apt, "reschedule")}
+                            className="bg-transparent border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs h-8 px-3 rounded-lg"
                           >
                             Reschedule
                           </Button>
                           <Button
                             size="sm"
-                            variant="bordered"
-                            className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
-                            onClick={() => openModal(apt, "cancel")}
+                            onPress={() => openModal(apt, "cancel")}
+                            className="bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs h-8 px-3 rounded-lg"
                           >
                             Cancel
                           </Button>
                         </div>
                       )}
+
                     {apt.appointmentStatus === "completed" && (
                       <Button
                         size="sm"
-                        onPress={() => router.push("/dashboard/patient/reviews")}
-                        className="bg-gradient-to-r from-amber-500 to-orange-600 text-white font-semibold text-xs"
+                        onPress={() =>
+                          router.push("/dashboard/patient/reviews")
+                        }
+                        className="bg-gradient-to-r from-amber-500 to-orange-600 text-white font-semibold text-xs h-8 px-3 rounded-lg"
                       >
                         Leave Review
                       </Button>
@@ -345,12 +356,17 @@ export default function PatientAppointmentsPage() {
       )}
 
       {/* Cancel Modal */}
-      <Modal isOpen={isOpen && modalType === "cancel"} onClose={onClose}>
-        <Modal.Backdrop>
-          <Modal.Container>
-            <Modal.Dialog>
-              <Modal.Header>
-                <Modal.Heading>Cancel Appointment</Modal.Heading>
+      <Modal>
+        <Modal.Backdrop
+          isOpen={isOpen && modalType === "cancel"}
+          onOpenChange={setIsOpen}
+        >
+          <Modal.Container size="sm">
+            <Modal.Dialog className="bg-[#0d1b2a] border border-white/15">
+              <Modal.Header className="border-b border-white/10">
+                <Modal.Heading className="text-white font-bold">
+                  Cancel Appointment
+                </Modal.Heading>
               </Modal.Header>
               <Modal.Body>
                 <p className="text-slate-400 text-sm py-2">
@@ -362,7 +378,7 @@ export default function PatientAppointmentsPage() {
                   undone.
                 </p>
               </Modal.Body>
-              <Modal.Footer>
+              <Modal.Footer className="border-t border-white/10">
                 <button
                   type="button"
                   onClick={onClose}
@@ -385,12 +401,17 @@ export default function PatientAppointmentsPage() {
       </Modal>
 
       {/* Reschedule Modal */}
-      <Modal isOpen={isOpen && modalType === "reschedule"} onClose={onClose}>
-        <Modal.Backdrop>
-          <Modal.Container>
-            <Modal.Dialog>
-              <Modal.Header>
-                <Modal.Heading>Reschedule Appointment</Modal.Heading>
+      <Modal>
+        <Modal.Backdrop
+          isOpen={isOpen && modalType === "reschedule"}
+          onOpenChange={setIsOpen}
+        >
+          <Modal.Container size="sm">
+            <Modal.Dialog className="bg-[#0d1b2a] border border-white/15">
+              <Modal.Header className="border-b border-white/10">
+                <Modal.Heading className="text-white font-bold">
+                  Reschedule Appointment
+                </Modal.Heading>
               </Modal.Header>
               <Modal.Body>
                 <div className="flex flex-col gap-4 py-2">
@@ -401,7 +422,7 @@ export default function PatientAppointmentsPage() {
                     <input
                       type="date"
                       value={rescheduleData.appointmentDate}
-                      min={new Date().toISOString().split("T")}
+                      min={new Date().toISOString().split("T")[0]}
                       onChange={(e) =>
                         setRescheduleData((p) => ({
                           ...p,
@@ -416,35 +437,23 @@ export default function PatientAppointmentsPage() {
                       New Time Slot
                     </label>
                     <Select
-                      selectedKeys={
-                        rescheduleData.appointmentTime
-                          ? [rescheduleData.appointmentTime]
-                          : []
-                      }
-                      onSelectionChange={(keys) =>
-                        setRescheduleData((p) => ({
-                          ...p,
-                          appointmentTime: Array.from(keys) || "",
-                        }))
-                      }
-                      classNames={{
-                        trigger:
-                          "bg-white/5 border border-white/10 hover:border-cyan-500/40 data-[focus=true]:border-cyan-500 transition-all",
-                        value: "text-slate-200 text-sm",
-                        popoverContent:
-                          "bg-[#0d1b2a] border border-white/10",
-                      }}
+                      className="w-full"
+                      placeholder="Select time"
+                      value={rescheduleData.appointmentTime || null}
+                      onChange={handleTimeChange}
                     >
-                      <Select.Trigger>
-                        <Select.Value placeholder="Select time" />
+                      <Select.Trigger className="w-full h-11 px-4 flex items-center justify-between gap-2 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 text-sm transition-all focus:outline-none">
+                        <Select.Value />
                         <Select.Indicator />
                       </Select.Trigger>
-                      <Select.Popover>
+                      <Select.Popover className="bg-[#0d1b2a] border border-white/10 rounded-xl p-1">
                         <ListBox>
                           {TIME_SLOTS.map((t) => (
                             <ListBox.Item
                               key={t}
-                              className="text-slate-300 hover:bg-white/5 data-[hover=true]:bg-white/5"
+                              id={t}
+                              textValue={t}
+                              className="text-slate-300 text-sm px-3 py-2 rounded-lg cursor-pointer outline-none data-[hovered]:bg-white/5 data-[focused]:bg-white/5"
                             >
                               {t}
                             </ListBox.Item>
@@ -455,7 +464,7 @@ export default function PatientAppointmentsPage() {
                   </div>
                 </div>
               </Modal.Body>
-              <Modal.Footer>
+              <Modal.Footer className="border-t border-white/10">
                 <button
                   type="button"
                   onClick={onClose}
@@ -476,6 +485,17 @@ export default function PatientAppointmentsPage() {
           </Modal.Container>
         </Modal.Backdrop>
       </Modal>
+
+      {/* Stripe payment */}
+      <PaymentModal
+        appointment={payingFor}
+        isOpen={!!payingFor}
+        onClose={() => setPayingFor(null)}
+        onSuccess={() => {
+          setPayingFor(null);
+          fetchAppointments();
+        }}
+      />
     </div>
   );
 }

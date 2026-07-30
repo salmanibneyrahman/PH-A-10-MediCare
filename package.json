@@ -13,13 +13,16 @@
     "@gravity-ui/icons": "^2.20.0",
     "@heroui/react": "^3.2.1",
     "@heroui/styles": "^3.2.1",
+    "@stripe/react-stripe-js": "^6.8.0",
+    "@stripe/stripe-js": "^9.12.1",
     "better-auth": "^1.6.22",
     "mongodb": "^7.4.0",
-    "next": "16.2.9",
+    "next": "^16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-toastify": "^11.1.0",
-    "recharts": "^3.9.2"
+    "recharts": "^3.9.2",
+    "stripe": "^22.3.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -160,7 +160,7 @@ export default function PatientPaymentsPage() {
                       </td>
                       <td>
                         <span className="text-slate-200 text-sm font-medium">
-                          {payment.doctorId || "—"}
+                          {payment.doctorName || payment.doctorId || "—"}
                         </span>
                       </td>
                       <td>
