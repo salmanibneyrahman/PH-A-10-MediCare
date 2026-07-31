@@ -74,7 +74,7 @@ export default function PatientReviewsPage() {
     } finally {
       setLoading(false);
     }
-  }, [dbUser?._id]);
+  }, [dbUser]);
 
   useEffect(() => {
     fetchData();
@@ -365,11 +365,10 @@ export default function PatientReviewsPage() {
                                   appointmentId: doc.appointmentId,
                                 }))
                               }
-                              className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
-                                formData.doctorId === doc.doctorId
+                              className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${formData.doctorId === doc.doctorId
                                   ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-400"
                                   : "bg-white/5 border-white/10 text-slate-300 hover:border-white/20"
-                              }`}
+                                }`}
                             >
                               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-indigo-600/20 flex items-center justify-center shrink-0">
                                 <span className="text-cyan-400 font-bold text-sm">
@@ -424,16 +423,15 @@ export default function PatientReviewsPage() {
                       />
                       <span className="text-slate-300 text-sm font-medium">
                         {formData.rating > 0
-                          ? `${formData.rating}/5 — ${
-                              [
-                                "",
-                                "Poor",
-                                "Fair",
-                                "Good",
-                                "Very Good",
-                                "Excellent",
-                              ][formData.rating]
-                            }`
+                          ? `${formData.rating}/5 — ${[
+                            "",
+                            "Poor",
+                            "Fair",
+                            "Good",
+                            "Very Good",
+                            "Excellent",
+                          ][formData.rating]
+                          }`
                           : "Click to rate"}
                       </span>
                     </div>

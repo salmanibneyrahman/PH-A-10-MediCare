@@ -564,7 +564,7 @@ export default function DoctorDetailsPage() {
                           <Select
                             selectedKeys={bookingData.appointmentTime ? [bookingData.appointmentTime] : []}
                             onSelectionChange={handleTimeSelectChange}
-                            classNames={{
+                            className={{
                               trigger: "bg-white/5 border border-white/10 hover:border-cyan-500/40 data-[focus=true]:border-cyan-500 transition-all h-12",
                               value: "text-slate-200 text-sm",
                               popoverContent: "bg-[#0d1b2a] border border-white/10",

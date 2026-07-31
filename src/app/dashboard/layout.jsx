@@ -16,8 +16,8 @@ function SidebarLink({ href, icon, label, badge }) {
     <Link
       href={href}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative ${isActive
-          ? "bg-gradient-to-r from-cyan-500/20 to-indigo-500/10 text-cyan-400 border border-cyan-500/30 shadow-lg shadow-cyan-500/10"
-          : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
+        ? "bg-gradient-to-r from-cyan-500/20 to-indigo-500/10 text-cyan-400 border border-cyan-500/30 shadow-lg shadow-cyan-500/10"
+        : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
         }`}
     >
       <svg
@@ -377,12 +377,14 @@ export default function DashboardLayout({ children }) {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/find-doctors"
-              className="hidden sm:inline-flex items-center justify-center h-8 px-3 rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 font-medium text-xs transition-colors"
-            >
-              Find Doctors
-            </Link>
+            {role === "patient" && (
+              <Link
+                href="/find-doctors"
+                className="hidden sm:inline-flex items-center justify-center h-8 px-3 rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 font-medium text-xs transition-colors"
+              >
+                Find Doctors
+              </Link>
+            )}
             {/* Avatar Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button

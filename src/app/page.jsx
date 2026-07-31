@@ -869,7 +869,7 @@ export default function HomePage() {
                           src={review.patient?.image || ""}
                           name={review.patient?.name || "P"}
                           size="sm"
-                          classNames={{
+                          className={{
                             base: "bg-gradient-to-br from-indigo-500 to-purple-600 shrink-0",
                             name: "text-white font-semibold text-xs",
                           }}
