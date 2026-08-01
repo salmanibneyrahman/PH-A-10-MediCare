@@ -71,14 +71,18 @@ export default function DoctorDetailsPage() {
 
   const validateBooking = () => {
     const errs = {};
-    if (!bookingData.appointmentDate)
+    if (!bookingData.appointmentDate) {
       errs.appointmentDate = "Please select a date";
-    else {
-      const selected = new Date(bookingData.appointmentDate);
+    } else {
+      const selected = new Date(`${bookingData.appointmentDate}T12:00:00`);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      if (selected < today)
+      if (selected < today) {
         errs.appointmentDate = "Date cannot be in the past";
+      } else if (!isDayAvailable(bookingData.appointmentDate)) {
+        const dayName = DAY_NAMES[selected.getDay()];
+        errs.appointmentDate = `Dr. ${doctor.doctorName} is not available on ${dayName}s. Available: ${availableDays.join(", ")}`;
+      }
     }
     if (!bookingData.appointmentTime)
       errs.appointmentTime = "Please select a time slot";
@@ -122,6 +126,29 @@ export default function DoctorDetailsPage() {
     }
   };
 
+  const DAY_NAMES = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  const availableDays = doctor?.availableDays || [];
+
+  const isDayAvailable = useCallback(
+    (dateStr) => {
+      if (!dateStr) return false;
+      if (availableDays.length === 0) return true; // no schedule set = allow
+      // Parse as local midday so timezone can't shift the weekday.
+      const d = new Date(`${dateStr}T12:00:00`);
+      return availableDays.includes(DAY_NAMES[d.getDay()]);
+    },
+    [availableDays]
+  );
+
   const handleStripePayment = async () => {
     if (!createdAppointmentId || !dbUser?._id) return;
     setPaymentLoading(true);
@@ -151,11 +178,23 @@ export default function DoctorDetailsPage() {
     }
   };
 
-  const handleDateChange = useCallback((e) => {
-    setBookingData((p) => ({ ...p, appointmentDate: e.target.value }));
-    if (bookingErrors.appointmentDate)
-      setBookingErrors((p) => ({ ...p, appointmentDate: "" }));
-  }, [bookingErrors.appointmentDate]);
+  const handleDateChange = useCallback(
+    (e) => {
+      const value = e.target.value;
+      setBookingData((p) => ({ ...p, appointmentDate: value }));
+
+      if (value && !isDayAvailable(value)) {
+        const dayName = DAY_NAMES[new Date(`${value}T12:00:00`).getDay()];
+        setBookingErrors((p) => ({
+          ...p,
+          appointmentDate: `Not available on ${dayName}s. Please pick another date.`,
+        }));
+      } else {
+        setBookingErrors((p) => ({ ...p, appointmentDate: "" }));
+      }
+    },
+    [isDayAvailable]
+  );
 
   const handleTimeSlotClick = useCallback((slot) => {
     setBookingData((p) => ({ ...p, appointmentTime: slot }));
@@ -163,11 +202,11 @@ export default function DoctorDetailsPage() {
       setBookingErrors((p) => ({ ...p, appointmentTime: "" }));
   }, [bookingErrors.appointmentTime]);
 
-  const handleTimeSelectChange = useCallback((keys) => {
-    setBookingData((p) => ({ ...p, appointmentTime: Array.from(keys)[0] || "" }));
-    if (bookingErrors.appointmentTime)
-      setBookingErrors((p) => ({ ...p, appointmentTime: "" }));
-  }, [bookingErrors.appointmentTime]);
+  const handleTimeSelectChange = useCallback((key) => {
+    // v3 gives a plain string, NOT a Set.
+    setBookingData((p) => ({ ...p, appointmentTime: key || "" }));
+    setBookingErrors((p) => (p.appointmentTime ? { ...p, appointmentTime: "" } : p));
+  }, []);
 
   const handleSymptomsChange = useCallback((value) => {
     setBookingData((p) => ({ ...p, symptoms: value }));
@@ -228,9 +267,11 @@ export default function DoctorDetailsPage() {
               {/* Avatar Section */}
               <div className="relative shrink-0">
                 <Avatar className="w-32 h-32 text-4xl ring-4 ring-cyan-500/30">
-                  <Avatar.Image src={doctor.profileImage} alt={doctor.doctorName} />
+                  {doctor.profileImage && (
+                    <Avatar.Image src={doctor.profileImage} alt={doctor.doctorName} />
+                  )}
                   <Avatar.Fallback className="bg-gradient-to-br from-cyan-500 to-indigo-600 text-white font-bold text-3xl">
-                    {(doctor.doctorName || "D")[0]}
+                    {(doctor.doctorName || "D")[0]?.toUpperCase()}
                   </Avatar.Fallback>
                 </Avatar>
                 <div className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-emerald-500 border-2 border-[#0a0f1e] flex items-center justify-center">
@@ -331,11 +372,10 @@ export default function DoctorDetailsPage() {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 min-w-fit flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
-                activeTab === tab.key
-                  ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-lg shadow-cyan-500/20"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-              }`}
+              className={`flex-1 min-w-fit flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap ${activeTab === tab.key
+                ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-lg shadow-cyan-500/20"
+                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
@@ -407,11 +447,10 @@ export default function DoctorDetailsPage() {
                           return (
                             <div
                               key={day}
-                              className={`px-4 py-3 rounded-xl text-sm font-semibold text-center transition-all ${
-                                isAvailable
-                                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                                  : "bg-white/5 text-slate-600 border border-white/5"
-                              }`}
+                              className={`px-4 py-3 rounded-xl text-sm font-semibold text-center transition-all ${isAvailable
+                                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                : "bg-white/5 text-slate-600 border border-white/5"
+                                }`}
                             >
                               {day}
                             </div>
@@ -528,7 +567,9 @@ export default function DoctorDetailsPage() {
                   ) : (
                     <div className="space-y-6">
                       <div className="flex flex-col gap-2">
-                        <label className="text-slate-400 text-sm font-semibold">Appointment Date</label>
+                        <label className="text-slate-400 text-sm font-semibold">
+                          Appointment Date
+                        </label>
                         <input
                           type="date"
                           value={bookingData.appointmentDate}
@@ -536,8 +577,18 @@ export default function DoctorDetailsPage() {
                           onChange={handleDateChange}
                           className="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-slate-200 text-sm font-medium focus:outline-none focus:border-cyan-500 hover:border-white/20 transition-all [color-scheme:dark]"
                         />
+                        {availableDays.length > 0 && (
+                          <p className="text-slate-500 text-xs">
+                            Available on:{" "}
+                            <span className="text-emerald-400 font-medium">
+                              {availableDays.join(", ")}
+                            </span>
+                          </p>
+                        )}
                         {bookingErrors.appointmentDate && (
-                          <p className="text-red-400 text-xs font-medium">{bookingErrors.appointmentDate}</p>
+                          <p className="text-red-400 text-xs font-medium">
+                            {bookingErrors.appointmentDate}
+                          </p>
                         )}
                       </div>
 
@@ -550,11 +601,10 @@ export default function DoctorDetailsPage() {
                                 key={slot}
                                 type="button"
                                 onClick={() => handleTimeSlotClick(slot)}
-                                className={`px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
-                                  bookingData.appointmentTime === slot
-                                    ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-lg shadow-cyan-500/10"
-                                    : "bg-white/5 text-slate-400 border border-white/10 hover:border-cyan-500/30 hover:text-cyan-400"
-                                }`}
+                                className={`px-4 py-3 rounded-xl text-sm font-semibold transition-all ${bookingData.appointmentTime === slot
+                                  ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-lg shadow-cyan-500/10"
+                                  : "bg-white/5 text-slate-400 border border-white/10 hover:border-cyan-500/30 hover:text-cyan-400"
+                                  }`}
                               >
                                 {slot}
                               </button>
@@ -562,22 +612,24 @@ export default function DoctorDetailsPage() {
                           </div>
                         ) : (
                           <Select
-                            selectedKeys={bookingData.appointmentTime ? [bookingData.appointmentTime] : []}
-                            onSelectionChange={handleTimeSelectChange}
-                            className={{
-                              trigger: "bg-white/5 border border-white/10 hover:border-cyan-500/40 data-[focus=true]:border-cyan-500 transition-all h-12",
-                              value: "text-slate-200 text-sm",
-                              popoverContent: "bg-[#0d1b2a] border border-white/10",
-                            }}
+                            className="w-full"
+                            placeholder="Select a time slot"
+                            value={bookingData.appointmentTime || null}
+                            onChange={handleTimeSelectChange}
                           >
-                            <Select.Trigger>
-                              <Select.Value placeholder="Select a time slot" />
+                            <Select.Trigger className="w-full h-12 px-4 flex items-center justify-between gap-2 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 text-sm transition-all focus:outline-none">
+                              <Select.Value />
                               <Select.Indicator />
                             </Select.Trigger>
-                            <Select.Popover>
+                            <Select.Popover className="bg-[#0d1b2a] border border-white/10 rounded-xl p-1">
                               <ListBox>
                                 {["9:00 AM", "10:00 AM", "11:00 AM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"].map((t) => (
-                                  <ListBox.Item key={t} className="text-slate-300 hover:bg-white/5">
+                                  <ListBox.Item
+                                    key={t}
+                                    id={t}
+                                    textValue={t}
+                                    className="text-slate-300 text-sm px-3 py-2 rounded-lg cursor-pointer outline-none data-[hovered]:bg-white/5 data-[focused]:bg-white/5"
+                                  >
                                     {t}
                                   </ListBox.Item>
                                 ))}
@@ -595,16 +647,21 @@ export default function DoctorDetailsPage() {
                         value={bookingData.symptoms}
                         onChange={handleSymptomsChange}
                         isInvalid={!!bookingErrors.symptoms}
-                        errorMessage={bookingErrors.symptoms}
                         className="w-full"
                       >
-                        <Label className="text-slate-400 text-sm font-semibold">
+                        <Label className="text-slate-400 text-sm font-semibold mb-1.5 block">
                           Symptoms / Reason for Visit
                         </Label>
                         <TextArea
                           placeholder="Describe your symptoms or reason for the appointment..."
-                          className="w-full min-h-[100px] px-4 py-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none resize-none data-[invalid=true]:border-red-500/60"
+                          rows={4}
+                          className="w-full px-4 py-3 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none resize-none"
                         />
+                        {bookingErrors.symptoms && (
+                          <FieldError className="text-red-400 text-xs mt-1">
+                            {bookingErrors.symptoms}
+                          </FieldError>
+                        )}
                       </TextField>
 
                       <Button
@@ -711,11 +768,11 @@ export default function DoctorDetailsPage() {
                         label: "Date",
                         value: bookingData.appointmentDate
                           ? new Date(bookingData.appointmentDate).toLocaleDateString("en-US", {
-                              weekday: "long",
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
                           : "—",
                       },
                       { label: "Time", value: bookingData.appointmentTime || "—" },

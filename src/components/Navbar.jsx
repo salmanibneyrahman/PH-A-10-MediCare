@@ -69,8 +69,8 @@ export default function AppNavbar() {
     return (
         <nav
             className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-                    ? "bg-[#0a0f1e]/90 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/20"
-                    : "bg-transparent"
+                ? "bg-[#0a0f1e]/90 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/20"
+                : "bg-transparent"
                 }`}
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -125,8 +125,8 @@ export default function AppNavbar() {
                                 key={link.href}
                                 href={link.href}
                                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${pathname === link.href
-                                        ? "text-cyan-400 bg-cyan-500/10 border border-cyan-500/20"
-                                        : "text-slate-300 hover:text-cyan-400 hover:bg-white/5"
+                                    ? "text-cyan-400 bg-cyan-500/10 border border-cyan-500/20"
+                                    : "text-slate-300 hover:text-cyan-400 hover:bg-white/5"
                                     }`}
                             >
                                 {link.label}
@@ -136,7 +136,9 @@ export default function AppNavbar() {
 
                     {/* Right Side */}
                     <div className="flex items-center gap-2">
-                        {!loading && (
+                        {loading ? (
+                            <div className="w-9 h-9 rounded-full bg-white/10 animate-pulse border border-white/15" />
+                        ) : (
                             <>
                                 {isAuthenticated ? (
                                     <>
@@ -155,7 +157,7 @@ export default function AppNavbar() {
                                                 className="flex items-center"
                                             >
                                                 <div className="relative w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm ring-2 ring-cyan-500/50 hover:ring-cyan-500 transition-all cursor-pointer overflow-hidden">
-                                                    {user?.image ? (
+                                                    {dbUser?.photo || user?.image ? (
                                                         <Image src={user.image} alt={user?.name || "U"} fill className="object-cover rounded-full" />
                                                     ) : (
                                                         (user?.name || "U").charAt(0).toUpperCase()
@@ -254,8 +256,8 @@ export default function AppNavbar() {
                                 href={link.href}
                                 onClick={() => setIsMenuOpen(false)}
                                 className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${pathname === link.href
-                                        ? "text-cyan-400 bg-cyan-500/10 border border-cyan-500/20"
-                                        : "text-slate-300 hover:text-cyan-400 hover:bg-white/5"
+                                    ? "text-cyan-400 bg-cyan-500/10 border border-cyan-500/20"
+                                    : "text-slate-300 hover:text-cyan-400 hover:bg-white/5"
                                     }`}
                             >
                                 {link.label}

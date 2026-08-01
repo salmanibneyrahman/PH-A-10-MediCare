@@ -865,22 +865,23 @@ export default function HomePage() {
 
                       {/* Patient Info */}
                       <div className="flex items-center gap-3 pt-2 border-t border-white/5">
-                        <Avatar
-                          src={review.patient?.image || ""}
-                          name={review.patient?.name || "P"}
-                          size="sm"
-                          className={{
-                            base: "bg-gradient-to-br from-indigo-500 to-purple-600 shrink-0",
-                            name: "text-white font-semibold text-xs",
-                          }}
-                        />
+                        <Avatar size="sm" className="shrink-0">
+                          {review.patientPhoto && (
+                            <Avatar.Image
+                              src={review.patientPhoto}
+                              alt={review.patientName || "Patient"}
+                            />
+                          )}
+                          <Avatar.Fallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-semibold text-xs">
+                            {(review.patientName || "P")[0]?.toUpperCase()}
+                          </Avatar.Fallback>
+                        </Avatar>
                         <div className="min-w-0">
                           <p className="text-white font-semibold text-sm truncate">
-                            {review.patient?.name || "Anonymous Patient"}
+                            {review.patientName || "Patient"} 
                           </p>
                           <p className="text-slate-500 text-xs truncate">
-                            Patient of{" "}
-                            {review.doctor?.doctorName || "MediCare Doctor"}
+                            Patient of {review.doctorName || "MediCare Doctor"}
                           </p>
                         </div>
                         <Chip
@@ -891,6 +892,7 @@ export default function HomePage() {
                           Verified
                         </Chip>
                       </div>
+
                     </Card.Content>
                   </Card>
                 </div>

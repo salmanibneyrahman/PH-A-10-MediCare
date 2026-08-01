@@ -100,7 +100,7 @@ export function AuthProvider({ children }) {
     // The profile page saves the avatar to the DB record (`photo`), while
     // better-auth's session carries its own `image`. Prefer the DB value so
     // an edit shows up everywhere immediately.
-    const avatarUrl = dbUser?.photo || user?.image || "";
+    const avatarUrl = dbUser?.photo || session?.user?.image || "";
     const displayName = dbUser?.name || user?.name || "";
 
     const value = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Card, Button, Avatar } from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
@@ -22,28 +22,41 @@ export default function DoctorDashboardPage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    async function fetchData() {
-      if (!user?.email) return;
-      setLoading(true);
-      try {
-        const doc = await getDoctorByEmail(user.email);
-        setDoctor(doc);
-        const [apts, revs] = await Promise.all([
-          getDoctorAppointments(user.email),
-          getDoctorReviews(doc._id),
-        ]);
-        setAppointments(apts || []);
-        setReviews(revs || []);
-      } catch {
+  const fetchData = useCallback(async () => {
+    if (!user?.email) return;
+    setLoading(true);
+    try {
+      const doc = await getDoctorByEmail(user.email);
+      setDoctor(doc);
+
+      // THE BUG: this used to pass user.email. The backend route is
+      // /api/appointments/doctor/:doctorId and queries { doctorId },
+      // which stores the doctor's _id — so an email never matched and
+      // the overview always came back empty.
+      const doctorId = doc?._id?.toString();
+      if (!doctorId) {
         setAppointments([]);
         setReviews([]);
-      } finally {
-        setLoading(false);
+        return;
       }
+
+      const [apts, revs] = await Promise.all([
+        getDoctorAppointments(doctorId),
+        getDoctorReviews(doctorId),
+      ]);
+      setAppointments(apts || []);
+      setReviews(revs || []);
+    } catch {
+      setAppointments([]);
+      setReviews([]);
+    } finally {
+      setLoading(false);
     }
+  }, [user?.email]);
+
+  useEffect(() => {
     fetchData();
-  }, [user]);
+  }, [fetchData]);
 
   if (loading) return <LoadingSpinner text="Loading doctor dashboard..." />;
 
@@ -101,12 +114,14 @@ export default function DoctorDashboardPage() {
       <div className="glass-card border border-white/10 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
         <Avatar className="w-16 h-16 ring-4 ring-cyan-500/20 shrink-0">
-          <Avatar.Image
-            src={doctor?.profileImage || user?.image || ""}
-            alt={doctor?.doctorName || user?.name || "Doctor"}
-          />
+          {(doctor?.profileImage || user?.image) && (
+            <Avatar.Image
+              src={doctor?.profileImage || user?.image}
+              alt={doctor?.doctorName || user?.name || "Doctor"}
+            />
+          )}
           <Avatar.Fallback className="bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-black text-xl">
-            {(doctor?.doctorName || user?.name || "D")[0]}
+            {(doctor?.doctorName || user?.name || "D")[0]?.toUpperCase()}
           </Avatar.Fallback>
         </Avatar>
         <div className="flex-1 relative">
@@ -125,7 +140,7 @@ export default function DoctorDashboardPage() {
         </div>
         <Button
           onPress={() => router.push("/dashboard/doctor/schedule")}
-          className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold shadow-lg shadow-cyan-500/20 shrink-0"
+          className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold shadow-lg shadow-cyan-500/20 shrink-0 h-10 px-4 rounded-xl"
         >
           Manage Schedule
         </Button>
@@ -215,6 +230,12 @@ export default function DoctorDashboardPage() {
                   </svg>
                 </div>
                 <p className="text-slate-400 text-sm">No appointments today</p>
+                {appointments.length > 0 && (
+                  <p className="text-slate-600 text-xs">
+                    You have {appointments.length} appointment
+                    {appointments.length !== 1 ? "s" : ""} on other dates
+                  </p>
+                )}
               </div>
             ) : (
               <div className="flex flex-col gap-3">
@@ -239,8 +260,9 @@ export default function DoctorDashboardPage() {
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
+                      {/* Appointments store patientName, not a patient object */}
                       <p className="text-white font-semibold text-sm truncate">
-                        {apt.patient?.name || "Patient"}
+                        {apt.patientName || "Patient"}
                       </p>
                       <p className="text-slate-500 text-xs">
                         {apt.appointmentTime}
@@ -291,8 +313,9 @@ export default function DoctorDashboardPage() {
                     className="p-3 rounded-xl bg-white/5 border border-white/5"
                   >
                     <div className="flex items-center justify-between mb-2">
+                      {/* Reviews store patientName, not a patient object */}
                       <p className="text-white font-semibold text-sm">
-                        {review.patient?.name || "Patient"}
+                        {review.patientName || "Patient"}
                       </p>
                       <StarRating rating={review.rating} size="sm" />
                     </div>

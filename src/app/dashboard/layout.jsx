@@ -16,8 +16,8 @@ function SidebarLink({ href, icon, label, badge }) {
     <Link
       href={href}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative ${isActive
-        ? "bg-gradient-to-r from-cyan-500/20 to-indigo-500/10 text-cyan-400 border border-cyan-500/30 shadow-lg shadow-cyan-500/10"
-        : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
+          ? "bg-gradient-to-r from-cyan-500/20 to-indigo-500/10 text-cyan-400 border border-cyan-500/30 shadow-lg shadow-cyan-500/10"
+          : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
         }`}
     >
       <svg
@@ -65,6 +65,11 @@ const patientLinks = [
     href: "/dashboard/patient/payments",
     icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
     label: "Payment History",
+  },
+  {
+    href: "/dashboard/patient/prescriptions",
+    icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+    label: "My Prescriptions",
   },
   {
     href: "/dashboard/patient/reviews",
@@ -140,7 +145,8 @@ const adminLinks = [
 ];
 
 export default function DashboardLayout({ children }) {
-  const { user, dbUser, loading, isAuthenticated, logout } = useAuth();
+  const { user, dbUser, loading, isAuthenticated, logout, avatarUrl, displayName } =
+    useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -266,16 +272,16 @@ export default function DashboardLayout({ children }) {
         <div className="p-5 border-b border-white/5">
           <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
             <Avatar size="md">
-              <Avatar.Image src={user?.image || ""} alt={user?.name || "User"} />
+              <Avatar.Image src={avatarUrl} alt={displayName || "User"} />
               <Avatar.Fallback
                 className={`bg-gradient-to-br ${roleColors[role]} text-white font-bold`}
               >
-                {user?.name?.[0]?.toUpperCase() || "U"}
+                {displayName?.[0]?.toUpperCase() || "U"}
               </Avatar.Fallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-white font-semibold text-sm truncate">
-                {user?.name}
+                {displayName}
               </p>
               <p className="text-slate-500 text-xs truncate">{user?.email}</p>
             </div>
@@ -377,14 +383,12 @@ export default function DashboardLayout({ children }) {
           </div>
 
           <div className="flex items-center gap-3">
-            {role === "patient" && (
-              <Link
-                href="/find-doctors"
-                className="hidden sm:inline-flex items-center justify-center h-8 px-3 rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 font-medium text-xs transition-colors"
-              >
-                Find Doctors
-              </Link>
-            )}
+            <Link
+              href="/find-doctors"
+              className="hidden sm:inline-flex items-center justify-center h-8 px-3 rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 font-medium text-xs transition-colors"
+            >
+              Find Doctors
+            </Link>
             {/* Avatar Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button
@@ -396,13 +400,13 @@ export default function DashboardLayout({ children }) {
               >
                 <Avatar size="sm" className="ring-2 ring-cyan-500/30">
                   <Avatar.Image
-                    src={user?.image || ""}
-                    alt={user?.name || "User"}
+                    src={avatarUrl}
+                    alt={displayName || "User"}
                   />
                   <Avatar.Fallback
                     className={`bg-gradient-to-br ${roleColors[role]} text-white font-bold text-xs`}
                   >
-                    {user?.name?.[0]?.toUpperCase() || "U"}
+                    {displayName?.[0]?.toUpperCase() || "U"}
                   </Avatar.Fallback>
                 </Avatar>
               </button>
@@ -412,7 +416,7 @@ export default function DashboardLayout({ children }) {
                   {/* Profile Info */}
                   <div className="flex flex-col gap-1 py-2 px-4 border-b border-white/5">
                     <p className="text-sm font-semibold text-white truncate">
-                      {user?.name}
+                      {displayName}
                     </p>
                     <p className="text-xs text-slate-400 truncate">
                       {user?.email}
