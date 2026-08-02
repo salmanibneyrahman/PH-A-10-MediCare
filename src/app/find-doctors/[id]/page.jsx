@@ -11,44 +11,59 @@ import {
   Select,
   ListBox,
   TextArea,
-  Modal,
   TextField,
   Label,
+  FieldError,
 } from "@heroui/react";
 import {
   getDoctorById,
   getDoctorReviews,
   createAppointment,
-  createPaymentIntent,
-  confirmPayment,
 } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import StarRating from "@/components/StarRating";
 import StatusBadge from "@/components/StatusBadge";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import PaymentModal from "@/components/PaymentModal";
 import { toast } from "react-toastify";
+
+const DAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
+const DEFAULT_SLOTS = [
+  "9:00 AM",
+  "10:00 AM",
+  "11:00 AM",
+  "2:00 PM",
+  "3:00 PM",
+  "4:00 PM",
+  "5:00 PM",
+];
 
 export default function DoctorDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
   const { user, dbUser, isAuthenticated } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
 
   const [doctor, setDoctor] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [bookingLoading, setBookingLoading] = useState(false);
-  const [paymentLoading, setPaymentLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
-  const [createdAppointmentId, setCreatedAppointmentId] = useState(null);
+  const [pendingAppointment, setPendingAppointment] = useState(null);
   const [bookingData, setBookingData] = useState({
     appointmentDate: "",
     appointmentTime: "",
     symptoms: "",
   });
   const [bookingErrors, setBookingErrors] = useState({});
-
-  const onClose = useCallback(() => setIsOpen(false), []);
 
   useEffect(() => {
     async function fetchData() {
@@ -59,7 +74,7 @@ export default function DoctorDetailsPage() {
           getDoctorReviews(id),
         ]);
         setDoctor(docData);
-        setReviews(reviewData);
+        setReviews(reviewData || []);
       } catch {
         toast.error("Failed to load doctor details");
       } finally {
@@ -68,6 +83,17 @@ export default function DoctorDetailsPage() {
     }
     if (id) fetchData();
   }, [id]);
+
+  const availableDays = doctor?.availableDays || [];
+  const isDayAvailable = useCallback(
+    (dateStr) => {
+      if (!dateStr) return false;
+      if (availableDays.length === 0) return true;
+      const d = new Date(`${dateStr}T12:00:00`);
+      return availableDays.includes(DAY_NAMES[d.getDay()]);
+    },
+    [availableDays]
+  );
 
   const validateBooking = () => {
     const errs = {};
@@ -80,8 +106,8 @@ export default function DoctorDetailsPage() {
       if (selected < today) {
         errs.appointmentDate = "Date cannot be in the past";
       } else if (!isDayAvailable(bookingData.appointmentDate)) {
-        const dayName = DAY_NAMES[selected.getDay()];
-        errs.appointmentDate = `Dr. ${doctor.doctorName} is not available on ${dayName}s. Available: ${availableDays.join(", ")}`;
+        errs.appointmentDate = `Not available on ${DAY_NAMES[selected.getDay()]
+          }s. Available: ${availableDays.join(", ")}`;
       }
     }
     if (!bookingData.appointmentTime)
@@ -103,9 +129,10 @@ export default function DoctorDetailsPage() {
       return;
     }
     if (!validateBooking()) return;
+
     setBookingLoading(true);
     try {
-      const result = await createAppointment({
+      const payload = {
         patientId: dbUser._id.toString(),
         patientName: user.name || "",
         patientEmail: user.email || "",
@@ -116,9 +143,10 @@ export default function DoctorDetailsPage() {
         appointmentDate: bookingData.appointmentDate,
         appointmentTime: bookingData.appointmentTime,
         symptoms: bookingData.symptoms,
-      });
-      setCreatedAppointmentId(result.insertedId);
-      setIsOpen(true);
+      };
+
+      const result = await createAppointment(payload);
+      setPendingAppointment({ ...payload, _id: result.insertedId });
     } catch (err) {
       toast.error(err.message || "Failed to create appointment");
     } finally {
@@ -126,63 +154,10 @@ export default function DoctorDetailsPage() {
     }
   };
 
-  const DAY_NAMES = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-  ];
-
-  const availableDays = doctor?.availableDays || [];
-
-  const isDayAvailable = useCallback(
-    (dateStr) => {
-      if (!dateStr) return false;
-      if (availableDays.length === 0) return true; // no schedule set = allow
-      // Parse as local midday so timezone can't shift the weekday.
-      const d = new Date(`${dateStr}T12:00:00`);
-      return availableDays.includes(DAY_NAMES[d.getDay()]);
-    },
-    [availableDays]
-  );
-
-  const handleStripePayment = async () => {
-    if (!createdAppointmentId || !dbUser?._id) return;
-    setPaymentLoading(true);
-    try {
-      const intentData = await createPaymentIntent({
-        amount: doctor.consultationFee,
-        appointmentId: createdAppointmentId,
-        patientId: dbUser._id.toString(),
-        doctorId: id,
-      });
-
-      const confirmed = await confirmPayment({
-        paymentIntentId: intentData.paymentIntentId,
-        appointmentId: createdAppointmentId,
-        patientId: dbUser._id.toString(),
-        doctorId: id,
-        amount: doctor.consultationFee,
-      });
-
-      toast.success("Appointment booked and payment successful!");
-      onClose();
-      router.push("/dashboard/patient/appointments");
-    } catch (err) {
-      toast.error(err.message || "Payment failed. Please try again.");
-    } finally {
-      setPaymentLoading(false);
-    }
-  };
-
   const handleDateChange = useCallback(
     (e) => {
       const value = e.target.value;
       setBookingData((p) => ({ ...p, appointmentDate: value }));
-
       if (value && !isDayAvailable(value)) {
         const dayName = DAY_NAMES[new Date(`${value}T12:00:00`).getDay()];
         setBookingErrors((p) => ({
@@ -198,36 +173,52 @@ export default function DoctorDetailsPage() {
 
   const handleTimeSlotClick = useCallback((slot) => {
     setBookingData((p) => ({ ...p, appointmentTime: slot }));
-    if (bookingErrors.appointmentTime)
-      setBookingErrors((p) => ({ ...p, appointmentTime: "" }));
-  }, [bookingErrors.appointmentTime]);
+    setBookingErrors((p) =>
+      p.appointmentTime ? { ...p, appointmentTime: "" } : p
+    );
+  }, []);
 
   const handleTimeSelectChange = useCallback((key) => {
-    // v3 gives a plain string, NOT a Set.
     setBookingData((p) => ({ ...p, appointmentTime: key || "" }));
-    setBookingErrors((p) => (p.appointmentTime ? { ...p, appointmentTime: "" } : p));
+    setBookingErrors((p) =>
+      p.appointmentTime ? { ...p, appointmentTime: "" } : p
+    );
   }, []);
 
   const handleSymptomsChange = useCallback((value) => {
     setBookingData((p) => ({ ...p, symptoms: value }));
-    if (bookingErrors.symptoms)
-      setBookingErrors((p) => ({ ...p, symptoms: "" }));
-  }, [bookingErrors.symptoms]);
+    setBookingErrors((p) => (p.symptoms ? { ...p, symptoms: "" } : p));
+  }, []);
 
   const tabs = [
-    { key: "overview", label: "Overview", icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
-    { key: "schedule", label: "Schedule", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
-    { key: "reviews", label: `Reviews (${reviews.length})`, icon: "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" },
+    {
+      key: "overview",
+      label: "Overview",
+      icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+    },
+    {
+      key: "schedule",
+      label: "Schedule",
+      icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
+    },
+    {
+      key: "reviews",
+      label: `Reviews (${reviews.length})`,
+      icon: "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z",
+    },
     { key: "book", label: "Book Appointment", icon: "M12 4v16m8-8H4" },
   ];
 
-  if (loading) return <LoadingSpinner fullScreen text="Loading doctor profile..." />;
+  if (loading)
+    return <LoadingSpinner fullScreen text="Loading doctor profile..." />;
 
   if (!doctor) {
     return (
       <div className="min-h-screen bg-[#0a0f1e] flex items-center justify-center pt-24">
         <div className="text-center">
-          <h2 className="text-white text-xl font-bold mb-4">Doctor not found</h2>
+          <h2 className="text-white text-xl font-bold mb-4">
+            Doctor not found
+          </h2>
           <Button
             onPress={() => router.push("/find-doctors")}
             className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold h-10 px-6 rounded-lg"
@@ -239,24 +230,54 @@ export default function DoctorDetailsPage() {
     );
   }
 
+  const isPending = doctor.verificationStatus === "pending";
+
   return (
     <div className="min-h-screen bg-[#0a0f1e] pt-24 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm mb-8">
-          <Link href="/" className="text-slate-500 hover:text-cyan-400 transition-colors">
+          <Link
+            href="/"
+            className="text-slate-500 hover:text-cyan-400 transition-colors"
+          >
             Home
           </Link>
-          <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          <svg
+            className="w-4 h-4 text-slate-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
           </svg>
-          <Link href="/find-doctors" className="text-slate-500 hover:text-cyan-400 transition-colors">
+          <Link
+            href="/find-doctors"
+            className="text-slate-500 hover:text-cyan-400 transition-colors"
+          >
             Find Doctors
           </Link>
-          <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          <svg
+            className="w-4 h-4 text-slate-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
           </svg>
-          <span className="text-slate-300 font-medium">{doctor.doctorName}</span>
+          <span className="text-slate-300 font-medium">
+            {doctor.doctorName}
+          </span>
         </nav>
 
         {/* Doctor Hero Card */}
@@ -264,24 +285,37 @@ export default function DoctorDetailsPage() {
           <div className="h-1.5 w-full bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-500" />
           <div className="p-8 md:p-10">
             <div className="flex flex-col lg:flex-row gap-8 items-start">
-              {/* Avatar Section */}
+              {/* Avatar */}
               <div className="relative shrink-0">
                 <Avatar className="w-32 h-32 text-4xl ring-4 ring-cyan-500/30">
                   {doctor.profileImage && (
-                    <Avatar.Image src={doctor.profileImage} alt={doctor.doctorName} />
+                    <Avatar.Image
+                      src={doctor.profileImage}
+                      alt={doctor.doctorName}
+                    />
                   )}
                   <Avatar.Fallback className="bg-gradient-to-br from-cyan-500 to-indigo-600 text-white font-bold text-3xl">
                     {(doctor.doctorName || "D")[0]?.toUpperCase()}
                   </Avatar.Fallback>
                 </Avatar>
                 <div className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-emerald-500 border-2 border-[#0a0f1e] flex items-center justify-center">
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  <svg
+                    className="w-3 h-3 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 </div>
               </div>
 
-              {/* Info Section */}
+              {/* Info */}
               <div className="flex-1 flex flex-col gap-5">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                   <div className="flex flex-col gap-2">
@@ -297,8 +331,18 @@ export default function DoctorDetailsPage() {
                       </Chip>
                       {doctor.hospitalName && (
                         <div className="flex items-center gap-2 text-slate-400">
-                          <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          <svg
+                            className="w-4 h-4 text-slate-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                            />
                           </svg>
                           <span className="text-sm">{doctor.hospitalName}</span>
                         </div>
@@ -307,7 +351,7 @@ export default function DoctorDetailsPage() {
                   </div>
                 </div>
 
-                {/* Stats Grid */}
+                {/* Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     {
@@ -328,7 +372,9 @@ export default function DoctorDetailsPage() {
                     },
                     {
                       label: "Rating",
-                      value: doctor.averageRating ? doctor.averageRating.toFixed(1) : "New",
+                      value: doctor.averageRating
+                        ? doctor.averageRating.toFixed(1)
+                        : "New",
                       suffix: doctor.averageRating ? "/5" : "",
                       icon: "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z",
                       color: "text-amber-400",
@@ -347,15 +393,35 @@ export default function DoctorDetailsPage() {
                       key={stat.label}
                       className={`flex flex-col gap-2 p-5 rounded-xl ${stat.bg} border border-white/5`}
                     >
-                      <svg className={`w-5 h-5 ${stat.color}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={stat.icon} />
+                      <svg
+                        className={`w-5 h-5 ${stat.color}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d={stat.icon}
+                        />
                       </svg>
                       <div>
                         <div className="flex items-baseline gap-1">
-                          <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
-                          {stat.suffix && <p className={`text-lg font-bold ${stat.color} opacity-70`}>{stat.suffix}</p>}
+                          <p className={`text-2xl font-black ${stat.color}`}>
+                            {stat.value}
+                          </p>
+                          {stat.suffix && (
+                            <p
+                              className={`text-lg font-bold ${stat.color} opacity-70`}
+                            >
+                              {stat.suffix}
+                            </p>
+                          )}
                         </div>
-                        <p className="text-slate-500 text-sm mt-1">{stat.label}</p>
+                        <p className="text-slate-500 text-sm mt-1">
+                          {stat.label}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -365,7 +431,7 @@ export default function DoctorDetailsPage() {
           </div>
         </Card>
 
-        {/* Modern Tabs */}
+        {/* Tabs */}
         <div className="flex gap-2 p-2 rounded-2xl glass-card border border-white/10 mb-8 overflow-x-auto">
           {tabs.map((tab) => (
             <button
@@ -377,8 +443,18 @@ export default function DoctorDetailsPage() {
                 : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
                 }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d={tab.icon}
+                />
               </svg>
               {tab.label}
             </button>
@@ -387,7 +463,7 @@ export default function DoctorDetailsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            {/* Overview Tab */}
+            {/* Overview */}
             {activeTab === "overview" && (
               <>
                 {doctor.qualifications?.length > 0 && (
@@ -395,8 +471,18 @@ export default function DoctorDetailsPage() {
                     <Card.Content className="p-6">
                       <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-indigo-500/15 flex items-center justify-center">
-                          <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                          <svg
+                            className="w-5 h-5 text-indigo-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 14l9-5-9-5-9 5 9 5z"
+                            />
                           </svg>
                         </div>
                         Qualifications
@@ -404,12 +490,13 @@ export default function DoctorDetailsPage() {
                       <div className="flex flex-wrap gap-2">
                         {(Array.isArray(doctor.qualifications)
                           ? doctor.qualifications
-                          : doctor.qualifications?.split(",").map((q) => q.trim()) || []
+                          : doctor.qualifications
+                            ?.split(",")
+                            .map((q) => q.trim()) || []
                         ).map((q, i) => (
                           <Chip
                             key={i}
                             className="bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-medium"
-                            variant="flat"
                           >
                             {q}
                           </Chip>
@@ -421,29 +508,48 @@ export default function DoctorDetailsPage() {
 
                 <Card className="glass-card border border-white/10">
                   <Card.Content className="p-6">
-                    <h3 className="text-xl font-bold text-white mb-4">About Doctor</h3>
+                    <h3 className="text-xl font-bold text-white mb-4">
+                      About Doctor
+                    </h3>
                     <p className="text-slate-400 text-base leading-relaxed">
-                      {doctor.doctorName} is a highly qualified {doctor.specialization} specialist with{" "}
+                      {doctor.doctorName} is a highly qualified{" "}
+                      {doctor.specialization} specialist with{" "}
                       {doctor.experience} years of experience.
-                      {doctor.hospitalName ? ` Currently practicing at ${doctor.hospitalName}.` : ""}{" "}
-                      Dedicated to providing compassionate, evidence-based healthcare to all patients.
+                      {doctor.hospitalName
+                        ? ` Currently practicing at ${doctor.hospitalName}.`
+                        : ""}{" "}
+                      Dedicated to providing compassionate, evidence-based
+                      healthcare to all patients.
                     </p>
                   </Card.Content>
                 </Card>
               </>
             )}
 
-            {/* Schedule Tab */}
+            {/* Schedule */}
             {activeTab === "schedule" && (
               <Card className="glass-card border border-white/10">
                 <Card.Content className="p-6">
-                  <h3 className="text-xl font-bold text-white mb-6">Available Schedule</h3>
+                  <h3 className="text-xl font-bold text-white mb-6">
+                    Available Schedule
+                  </h3>
                   {doctor.availableDays?.length > 0 && (
                     <div className="mb-8">
-                      <p className="text-slate-400 text-sm mb-4 font-semibold uppercase tracking-wide">Available Days</p>
+                      <p className="text-slate-400 text-sm mb-4 font-semibold uppercase tracking-wide">
+                        Available Days
+                      </p>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => {
-                          const isAvailable = doctor.availableDays.includes(day);
+                        {[
+                          "Monday",
+                          "Tuesday",
+                          "Wednesday",
+                          "Thursday",
+                          "Friday",
+                          "Saturday",
+                          "Sunday",
+                        ].map((day) => {
+                          const isAvailable =
+                            doctor.availableDays.includes(day);
                           return (
                             <div
                               key={day}
@@ -461,15 +567,27 @@ export default function DoctorDetailsPage() {
                   )}
                   {doctor.availableSlots?.length > 0 && (
                     <div>
-                      <p className="text-slate-400 text-sm mb-4 font-semibold uppercase tracking-wide">Time Slots</p>
+                      <p className="text-slate-400 text-sm mb-4 font-semibold uppercase tracking-wide">
+                        Time Slots
+                      </p>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                         {doctor.availableSlots.map((slot, i) => (
                           <div
                             key={i}
                             className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm font-semibold"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
                             </svg>
                             {slot}
                           </div>
@@ -477,44 +595,74 @@ export default function DoctorDetailsPage() {
                       </div>
                     </div>
                   )}
-                  {!doctor.availableDays?.length && !doctor.availableSlots?.length && (
-                    <p className="text-slate-500 text-center py-12">No schedule information available yet.</p>
-                  )}
+                  {!doctor.availableDays?.length &&
+                    !doctor.availableSlots?.length && (
+                      <p className="text-slate-500 text-center py-12">
+                        No schedule information available yet.
+                      </p>
+                    )}
                 </Card.Content>
               </Card>
             )}
 
-            {/* Reviews Tab */}
+            {/* Reviews */}
             {activeTab === "reviews" && (
               <div className="space-y-4">
                 {reviews.length === 0 ? (
                   <Card className="glass-card border border-white/10">
                     <Card.Content className="p-12 text-center">
                       <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-slate-800 flex items-center justify-center">
-                        <svg className="w-10 h-10 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        <svg
+                          className="w-10 h-10 text-slate-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                          />
                         </svg>
                       </div>
-                      <p className="text-slate-400 text-lg font-medium">No reviews yet</p>
-                      <p className="text-slate-500 text-sm mt-2">Be the first to review after your appointment.</p>
+                      <p className="text-slate-400 text-lg font-medium">
+                        No reviews yet
+                      </p>
+                      <p className="text-slate-500 text-sm mt-2">
+                        Be the first to review after your appointment.
+                      </p>
                     </Card.Content>
                   </Card>
                 ) : (
                   reviews.map((review) => (
-                    <Card key={review._id} className="glass-card border border-white/10 transition-all">
+                    <Card
+                      key={review._id}
+                      className="glass-card border border-white/10 transition-all"
+                    >
                       <Card.Content className="p-6">
                         <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0">
-                            <span className="text-white font-bold text-lg">
-                              {(review.patientName || "P")[0]}
-                            </span>
-                          </div>
+                          <Avatar className="w-12 h-12 shrink-0">
+                            {review.patientPhoto && (
+                              <Avatar.Image
+                                src={review.patientPhoto}
+                                alt={review.patientName || "Patient"}
+                              />
+                            )}
+                            <Avatar.Fallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-lg">
+                              {(review.patientName || "P")[0]?.toUpperCase()}
+                            </Avatar.Fallback>
+                          </Avatar>
                           <div className="flex-1">
                             <div className="flex items-start justify-between gap-2 mb-3">
                               <div>
-                                <p className="text-white font-bold text-base">{review.patientName || "Patient"}</p>
+                                <p className="text-white font-bold text-base">
+                                  {review.patientName || "Patient"}
+                                </p>
                                 <p className="text-slate-500 text-xs mt-1">
-                                  {new Date(review.createdAt).toLocaleDateString("en-US", {
+                                  {new Date(
+                                    review.createdAt
+                                  ).toLocaleDateString("en-US", {
                                     year: "numeric",
                                     month: "long",
                                     day: "numeric",
@@ -523,7 +671,9 @@ export default function DoctorDetailsPage() {
                               </div>
                               <StarRating rating={review.rating} size="sm" />
                             </div>
-                            <p className="text-slate-300 text-sm leading-relaxed">{review.reviewText}</p>
+                            <p className="text-slate-300 text-sm leading-relaxed">
+                              {review.reviewText}
+                            </p>
                           </div>
                         </div>
                       </Card.Content>
@@ -533,29 +683,80 @@ export default function DoctorDetailsPage() {
               </div>
             )}
 
-            {/* Book Appointment Tab */}
+            {/* Book Appointment */}
             {activeTab === "book" && (
               <Card className="glass-card border border-white/10">
                 <Card.Content className="p-6 md:p-8">
                   <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-cyan-500/15 flex items-center justify-center">
-                      <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      <svg
+                        className="w-5 h-5 text-cyan-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
                       </svg>
                     </div>
                     Book an Appointment
                   </h3>
 
-                  {!isAuthenticated ? (
-                    <div className="text-center py-12 flex flex-col items-center gap-5">
+                  {isPending ? (
+                    <div className="text-center py-12 flex flex-col items-center gap-4">
                       <div className="w-20 h-20 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                        <svg className="w-10 h-10 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        <svg
+                          className="w-10 h-10 text-amber-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
                         </svg>
                       </div>
                       <div>
-                        <p className="text-white font-bold text-xl mb-2">Login Required</p>
-                        <p className="text-slate-400">Please sign in to book an appointment.</p>
+                        <p className="text-white font-bold text-xl mb-2">
+                          Awaiting Verification
+                        </p>
+                        <p className="text-slate-400">
+                          This doctor is not yet verified by our admin team.
+                          Booking will open once approved.
+                        </p>
+                      </div>
+                    </div>
+                  ) : !isAuthenticated ? (
+                    <div className="text-center py-12 flex flex-col items-center gap-5">
+                      <div className="w-20 h-20 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                        <svg
+                          className="w-10 h-10 text-amber-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-white font-bold text-xl mb-2">
+                          Login Required
+                        </p>
+                        <p className="text-slate-400">
+                          Please sign in to book an appointment.
+                        </p>
                       </div>
                       <Button
                         onPress={() => router.push("/login")}
@@ -593,7 +794,9 @@ export default function DoctorDetailsPage() {
                       </div>
 
                       <div className="flex flex-col gap-2">
-                        <label className="text-slate-400 text-sm font-semibold">Time Slot</label>
+                        <label className="text-slate-400 text-sm font-semibold">
+                          Time Slot
+                        </label>
                         {doctor.availableSlots?.length > 0 ? (
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             {doctor.availableSlots.map((slot) => (
@@ -623,7 +826,7 @@ export default function DoctorDetailsPage() {
                             </Select.Trigger>
                             <Select.Popover className="bg-[#0d1b2a] border border-white/10 rounded-xl p-1">
                               <ListBox>
-                                {["9:00 AM", "10:00 AM", "11:00 AM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"].map((t) => (
+                                {DEFAULT_SLOTS.map((t) => (
                                   <ListBox.Item
                                     key={t}
                                     id={t}
@@ -638,7 +841,9 @@ export default function DoctorDetailsPage() {
                           </Select>
                         )}
                         {bookingErrors.appointmentTime && (
-                          <p className="text-red-400 text-xs font-medium">{bookingErrors.appointmentTime}</p>
+                          <p className="text-red-400 text-xs font-medium">
+                            {bookingErrors.appointmentTime}
+                          </p>
                         )}
                       </div>
 
@@ -685,24 +890,49 @@ export default function DoctorDetailsPage() {
               <Card.Content className="p-6 flex flex-col gap-5">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-emerald-500/15 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      className="w-6 h-6 text-emerald-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-slate-400 text-xs font-semibold uppercase tracking-wide">Consultation Fee</p>
-                    <p className="text-3xl font-black text-emerald-400">${doctor.consultationFee}</p>
+                    <p className="text-slate-400 text-xs font-semibold uppercase tracking-wide">
+                      Consultation Fee
+                    </p>
+                    <p className="text-3xl font-black text-emerald-400">
+                      ${doctor.consultationFee}
+                    </p>
                   </div>
                 </div>
                 <Button
                   onPress={() => setActiveTab("book")}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold shadow-lg shadow-emerald-500/20 hover:opacity-90 transition-opacity h-12 rounded-xl"
+                  isDisabled={isPending}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold shadow-lg shadow-emerald-500/20 hover:opacity-90 transition-opacity h-12 rounded-xl disabled:opacity-40"
                 >
-                  Book Appointment
+                  {isPending ? "Not Yet Verified" : "Book Appointment"}
                 </Button>
                 <div className="flex items-center gap-2 text-xs text-slate-500 justify-center">
-                  <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  <svg
+                    className="w-4 h-4 text-emerald-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                    />
                   </svg>
                   <span className="font-medium">Secure payment via Stripe</span>
                 </div>
@@ -711,31 +941,49 @@ export default function DoctorDetailsPage() {
 
             <Card className="glass-card border border-white/10">
               <Card.Content className="p-6 flex flex-col gap-5">
-                <h4 className="text-lg font-bold text-white">Patient Ratings</h4>
+                <h4 className="text-lg font-bold text-white">
+                  Patient Ratings
+                </h4>
                 <div className="flex items-center gap-5">
                   <div className="text-center">
                     <p className="text-4xl font-black gradient-text">
-                      {doctor.averageRating ? doctor.averageRating.toFixed(1) : "0.0"}
+                      {doctor.averageRating
+                        ? doctor.averageRating.toFixed(1)
+                        : "0.0"}
                     </p>
                     <div className="mt-2">
-                      <StarRating rating={doctor.averageRating || 0} size="sm" />
+                      <StarRating
+                        rating={doctor.averageRating || 0}
+                        size="sm"
+                      />
                     </div>
-                    <p className="text-slate-500 text-xs mt-2 font-medium">{doctor.totalReviews || 0} reviews</p>
+                    <p className="text-slate-500 text-xs mt-2 font-medium">
+                      {doctor.totalReviews || 0} reviews
+                    </p>
                   </div>
                   <div className="flex-1 flex flex-col gap-2">
                     {[5, 4, 3, 2, 1].map((star) => {
-                      const count = reviews.filter((r) => Math.round(r.rating) === star).length;
-                      const pct = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+                      const count = reviews.filter(
+                        (r) => Math.round(r.rating) === star
+                      ).length;
+                      const pct =
+                        reviews.length > 0
+                          ? (count / reviews.length) * 100
+                          : 0;
                       return (
                         <div key={star} className="flex items-center gap-2">
-                          <span className="text-xs text-slate-500 w-3 font-semibold">{star}</span>
+                          <span className="text-xs text-slate-500 w-3 font-semibold">
+                            {star}
+                          </span>
                           <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
                             <div
                               className="h-full rounded-full bg-amber-400 transition-all duration-500"
                               style={{ width: `${pct}%` }}
                             />
                           </div>
-                          <span className="text-xs text-slate-500 w-6 font-semibold text-right">{count}</span>
+                          <span className="text-xs text-slate-500 w-6 font-semibold text-right">
+                            {count}
+                          </span>
                         </div>
                       );
                     })}
@@ -747,76 +995,22 @@ export default function DoctorDetailsPage() {
         </div>
       </div>
 
-      {/* Payment Modal */}
-      <Modal>
-        <Modal.Backdrop isOpen={isOpen} onOpenChange={setIsOpen}>
-          <Modal.Container size="md">
-            <Modal.Dialog className="glass-card border border-white/10">
-              <Modal.Header className="border-b border-white/10 py-6">
-                <div className="flex flex-col gap-1">
-                  <Modal.Heading className="text-white font-bold text-xl">Confirm & Pay</Modal.Heading>
-                  <p className="text-slate-400 text-sm">Complete your appointment booking</p>
-                </div>
-              </Modal.Header>
-              <Modal.Body className="py-6">
-                <div className="flex flex-col gap-5">
-                  <div className="p-5 rounded-xl bg-white/5 border border-white/10 flex flex-col gap-4">
-                    {[
-                      { label: "Doctor", value: doctor.doctorName },
-                      { label: "Specialization", value: doctor.specialization },
-                      {
-                        label: "Date",
-                        value: bookingData.appointmentDate
-                          ? new Date(bookingData.appointmentDate).toLocaleDateString("en-US", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
-                          : "—",
-                      },
-                      { label: "Time", value: bookingData.appointmentTime || "—" },
-                    ].map((item) => (
-                      <div key={item.label} className="flex items-center justify-between">
-                        <span className="text-slate-400 text-sm font-medium">{item.label}</span>
-                        <span className="text-white text-sm font-bold">{item.value}</span>
-                      </div>
-                    ))}
-                    <div className="border-t border-white/10 pt-4 flex items-center justify-between">
-                      <span className="text-slate-300 font-bold text-lg">Total Amount</span>
-                      <span className="text-2xl font-black text-emerald-400">${doctor.consultationFee}</span>
-                    </div>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/15 flex items-center gap-3">
-                    <svg className="w-5 h-5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                    <p className="text-slate-300 text-xs font-medium">
-                      Your payment is secured by Stripe. All transactions are encrypted and protected.
-                    </p>
-                  </div>
-                </div>
-              </Modal.Body>
-              <Modal.Footer className="border-t border-white/10 flex gap-3 py-6">
-                <Button
-                  onPress={onClose}
-                  className="flex-1 bg-transparent border border-white/15 text-slate-300 hover:bg-white/5 h-12 rounded-xl font-bold"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onPress={handleStripePayment}
-                  isPending={paymentLoading}
-                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold shadow-lg shadow-emerald-500/20 h-12 rounded-xl"
-                >
-                  {paymentLoading ? "Processing..." : `Pay $${doctor.consultationFee}`}
-                </Button>
-              </Modal.Footer>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
+      {/* Stripe payment — renders the real card form */}
+      <PaymentModal
+        appointment={pendingAppointment}
+        isOpen={!!pendingAppointment}
+        onClose={() => {
+          setPendingAppointment(null);
+          toast.info(
+            "Appointment saved as unpaid. You can pay from your dashboard."
+          );
+          router.push("/dashboard/patient/appointments");
+        }}
+        onSuccess={() => {
+          setPendingAppointment(null);
+          router.push("/dashboard/patient/appointments");
+        }}
+      />
     </div>
   );
 }

@@ -1,8 +1,17 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { Card, Button, TextField, Label, Input, TextArea, Modal } from "@heroui/react";
+import {
+  Card,
+  Button,
+  TextField,
+  Label,
+  Input,
+  TextArea,
+  FieldError,
+  Modal,
+} from "@heroui/react";
 import { useAuth } from "@/context/AuthContext";
 import {
   getDoctorAppointments,
@@ -19,8 +28,8 @@ export default function DoctorPrescriptionsPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const prefilledId = searchParams.get("appointmentId");
-  const [isOpen, setIsOpen] = useState(false);
 
+  const [isOpen, setIsOpen] = useState(false);
   const [doctor, setDoctor] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [prescriptions, setPrescriptions] = useState({});
@@ -35,22 +44,50 @@ export default function DoctorPrescriptionsPage() {
   });
   const [formErrors, setFormErrors] = useState({});
 
-  const onClose = useCallback(() => setIsOpen(false), []);
+  // THE REOPEN BUG: ?appointmentId=... stays in the URL, so every
+  // fetchData() after saving re-opened the modal. Only honour it once.
+  const prefillHandled = useRef(false);
 
-  useEffect(() => {
-    fetchData();
-  }, [user]);
+  const closeModal = useCallback(() => {
+    setIsOpen(false);
+    setModalType("");
+    setSelectedApt(null);
+    setFormData({ diagnosis: "", medications: "", notes: "" });
+    setFormErrors({});
+  }, []);
 
-  async function fetchData() {
+  const openCreateModal = useCallback((apt) => {
+    setSelectedApt(apt);
+    setModalType("create");
+    setFormData({ diagnosis: "", medications: "", notes: "" });
+    setFormErrors({});
+    setIsOpen(true);
+  }, []);
+
+  const openEditModal = useCallback(
+    (apt) => {
+      const pres = prescriptions[apt._id];
+      setSelectedApt(apt);
+      setModalType("edit");
+      setFormData({
+        diagnosis: pres?.diagnosis || "",
+        medications: pres?.medications || "",
+        notes: pres?.notes || "",
+      });
+      setFormErrors({});
+      setIsOpen(true);
+    },
+    [prescriptions]
+  );
+
+  const fetchData = useCallback(async () => {
     if (!user?.email) return;
     setLoading(true);
     try {
       const doc = await getDoctorByEmail(user.email);
       setDoctor(doc);
 
-      const apts = await getDoctorAppointments(
-        doc._id.toString()
-      );
+      const apts = await getDoctorAppointments(doc._id.toString());
       const completed = (apts || []).filter(
         (a) => a.appointmentStatus === "completed"
       );
@@ -60,10 +97,7 @@ export default function DoctorPrescriptionsPage() {
       await Promise.all(
         completed.map(async (apt) => {
           try {
-            const pres = await getPrescriptionByAppointment(
-              apt._id
-            );
-            presMap[apt._id] = pres;
+            presMap[apt._id] = await getPrescriptionByAppointment(apt._id);
           } catch {
             presMap[apt._id] = null;
           }
@@ -71,10 +105,14 @@ export default function DoctorPrescriptionsPage() {
       );
       setPrescriptions(presMap);
 
-      if (prefilledId) {
-        const apt = completed.find((a) => a._id === prefilledId);
-        if (apt) {
-          openCreateModal(apt, doc);
+      // Open the prefilled appointment only on the very first load.
+      if (prefilledId && !prefillHandled.current) {
+        prefillHandled.current = true;
+        const apt = completed.find(
+          (a) => a._id?.toString() === prefilledId.toString()
+        );
+        if (apt && !presMap[apt._id]) {
+          openCreateModal(apt);
         }
       }
     } catch {
@@ -82,37 +120,19 @@ export default function DoctorPrescriptionsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [user?.email, prefilledId, openCreateModal]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const validate = () => {
     const errs = {};
-    if (!formData.diagnosis.trim())
-      errs.diagnosis = "Diagnosis is required";
+    if (!formData.diagnosis.trim()) errs.diagnosis = "Diagnosis is required";
     if (!formData.medications.trim())
       errs.medications = "Medications are required";
     setFormErrors(errs);
     return Object.keys(errs).length === 0;
-  };
-
-  const openCreateModal = (apt, doc = doctor) => {
-    setSelectedApt(apt);
-    setModalType("create");
-    setFormData({ diagnosis: "", medications: "", notes: "" });
-    setFormErrors({});
-    setIsOpen(true);
-  };
-
-  const openEditModal = (apt) => {
-    const pres = prescriptions[apt._id];
-    setSelectedApt(apt);
-    setModalType("edit");
-    setFormData({
-      diagnosis: pres?.diagnosis || "",
-      medications: pres?.medications || "",
-      notes: pres?.notes || "",
-    });
-    setFormErrors({});
-    setIsOpen(true);
   };
 
   const handleCreate = async () => {
@@ -128,8 +148,8 @@ export default function DoctorPrescriptionsPage() {
         notes: formData.notes.trim(),
       });
       toast.success("Prescription created successfully!");
-      onClose();
-      fetchData();
+      closeModal();
+      await fetchData();
     } catch {
       toast.error("Failed to create prescription");
     } finally {
@@ -148,8 +168,10 @@ export default function DoctorPrescriptionsPage() {
         notes: formData.notes.trim(),
       });
       toast.success("Prescription updated successfully!");
-      onClose();
-      fetchData();
+      // Must reset modalType too — leaving it set let the modal
+      // re-trigger on the next state change.
+      closeModal();
+      await fetchData();
     } catch {
       toast.error("Failed to update prescription");
     } finally {
@@ -159,30 +181,22 @@ export default function DoctorPrescriptionsPage() {
 
   const handleDiagnosisChange = useCallback((value) => {
     setFormData((p) => ({ ...p, diagnosis: value }));
-    if (formErrors.diagnosis)
-      setFormErrors((p) => ({
-        ...p,
-        diagnosis: "",
-      }));
-  }, [formErrors.diagnosis]);
+    setFormErrors((p) => (p.diagnosis ? { ...p, diagnosis: "" } : p));
+  }, []);
 
   const handleMedicationsChange = useCallback((value) => {
     setFormData((p) => ({ ...p, medications: value }));
-    if (formErrors.medications)
-      setFormErrors((p) => ({
-        ...p,
-        medications: "",
-      }));
-  }, [formErrors.medications]);
+    setFormErrors((p) => (p.medications ? { ...p, medications: "" } : p));
+  }, []);
 
   const handleNotesChange = useCallback((value) => {
     setFormData((p) => ({ ...p, notes: value }));
   }, []);
 
-  const inputClass = "w-full px-3 py-2 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none data-[invalid=true]:border-red-500/60";
+  const inputClass =
+    "w-full px-3 py-2 bg-white/5 border border-white/10 hover:border-cyan-500/40 focus:border-cyan-500 rounded-xl text-slate-200 placeholder:text-slate-500 text-sm transition-all focus:outline-none";
 
-  if (loading)
-    return <LoadingSpinner text="Loading prescriptions..." />;
+  if (loading) return <LoadingSpinner text="Loading prescriptions..." />;
 
   return (
     <div className="flex flex-col gap-6">
@@ -218,8 +232,7 @@ export default function DoctorPrescriptionsPage() {
                 No Completed Appointments
               </p>
               <p className="text-slate-400 text-sm mt-1">
-                Prescriptions can only be created for completed
-                appointments.
+                Prescriptions can only be created for completed appointments.
               </p>
             </div>
           </Card.Content>
@@ -242,7 +255,7 @@ export default function DoctorPrescriptionsPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0">
                           <span className="text-white font-bold text-lg">
-                            {(apt.patientName || "P")[0]}
+                            {(apt.patientName || "P")[0]?.toUpperCase()}
                           </span>
                         </div>
                         <div>
@@ -250,14 +263,15 @@ export default function DoctorPrescriptionsPage() {
                             {apt.patientName || "Patient"}
                           </p>
                           <p className="text-slate-400 text-sm">
-                            {new Date(
-                              apt.appointmentDate
-                            ).toLocaleDateString("en-US", {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}{" "}
+                            {new Date(apt.appointmentDate).toLocaleDateString(
+                              "en-US",
+                              {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              }
+                            )}{" "}
                             • {apt.appointmentTime}
                           </p>
                         </div>
@@ -323,7 +337,7 @@ export default function DoctorPrescriptionsPage() {
                                   {item.label}
                                 </p>
                                 <p
-                                  className={`text-sm leading-relaxed ${item.color}`}
+                                  className={`text-sm leading-relaxed whitespace-pre-line ${item.color}`}
                                 >
                                   {item.value}
                                 </p>
@@ -334,30 +348,26 @@ export default function DoctorPrescriptionsPage() {
                     </div>
 
                     <div className="flex flex-col gap-2 items-start lg:items-end shrink-0">
-                      <StatusBadge
-                        status={apt.appointmentStatus}
-                      />
+                      <StatusBadge status={apt.appointmentStatus} />
                       {!prescription ? (
                         <Button
                           size="sm"
                           onPress={() => openCreateModal(apt)}
-                          className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold text-xs shadow-lg shadow-cyan-500/20 h-8 px-3 rounded-lg"
-                          startContent={
-                            <svg
-                              className="w-3.5 h-3.5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 4v16m8-8H4"
-                              />
-                            </svg>
-                          }
+                          className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold text-xs shadow-lg shadow-cyan-500/20 h-8 px-3 rounded-lg flex items-center gap-1.5"
                         >
+                          <svg
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 4v16m8-8H4"
+                            />
+                          </svg>
                           Create Prescription
                         </Button>
                       ) : (
@@ -380,9 +390,17 @@ export default function DoctorPrescriptionsPage() {
 
       {/* Create/Edit Modal */}
       <Modal>
-        <Modal.Backdrop isOpen={isOpen} onOpenChange={setIsOpen}>
+        <Modal.Backdrop
+          isOpen={isOpen}
+          onOpenChange={(open) => {
+            // Route every close through closeModal so modalType,
+            // selectedApt and the form all reset together.
+            if (!open) closeModal();
+            else setIsOpen(true);
+          }}
+        >
           <Modal.Container size="lg">
-            <Modal.Dialog className="glass-card border border-white/10">
+            <Modal.Dialog className="bg-[#0d1b2a] border border-white/15">
               <Modal.Header className="border-b border-white/10 py-6">
                 <div className="flex flex-col gap-1">
                   <Modal.Heading className="text-white font-bold text-lg">
@@ -398,6 +416,7 @@ export default function DoctorPrescriptionsPage() {
                   )}
                 </div>
               </Modal.Header>
+
               <Modal.Body className="py-6">
                 <div className="flex flex-col gap-4">
                   <TextField
@@ -405,60 +424,82 @@ export default function DoctorPrescriptionsPage() {
                     value={formData.diagnosis}
                     onChange={handleDiagnosisChange}
                     isInvalid={!!formErrors.diagnosis}
-                    errorMessage={formErrors.diagnosis}
                     className="w-full"
                   >
-                    <Label className="text-slate-400 text-sm">Diagnosis</Label>
+                    <Label className="text-slate-400 text-sm mb-1.5 block">
+                      Diagnosis
+                    </Label>
                     <Input
                       placeholder="Enter the diagnosis..."
                       className={inputClass}
                     />
+                    {formErrors.diagnosis && (
+                      <FieldError className="text-red-400 text-xs mt-1">
+                        {formErrors.diagnosis}
+                      </FieldError>
+                    )}
                   </TextField>
+
                   <TextField
                     name="medications"
                     value={formData.medications}
                     onChange={handleMedicationsChange}
                     isInvalid={!!formErrors.medications}
-                    errorMessage={formErrors.medications}
                     className="w-full"
                   >
-                    <Label className="text-slate-400 text-sm">Medications</Label>
+                    <Label className="text-slate-400 text-sm mb-1.5 block">
+                      Medications
+                    </Label>
                     <TextArea
-                      placeholder="List medications, dosages and instructions..."
-                      className={`${inputClass} min-h-[80px] resize-none`}
+                      placeholder="One per line, e.g.&#10;Paracetamol 500mg — twice daily after meals&#10;Amoxicillin 250mg — three times daily for 7 days"
+                      rows={4}
+                      className={`${inputClass} resize-none`}
                     />
+                    {formErrors.medications && (
+                      <FieldError className="text-red-400 text-xs mt-1">
+                        {formErrors.medications}
+                      </FieldError>
+                    )}
+                    <p className="text-slate-600 text-xs mt-1">
+                      Put each medication on its own line.
+                    </p>
                   </TextField>
+
                   <TextField
                     name="notes"
                     value={formData.notes}
                     onChange={handleNotesChange}
                     className="w-full"
                   >
-                    <Label className="text-slate-400 text-sm">Additional Notes (Optional)</Label>
+                    <Label className="text-slate-400 text-sm mb-1.5 block">
+                      Additional Notes (Optional)
+                    </Label>
                     <TextArea
                       placeholder="Any additional instructions or follow-up advice..."
-                      className={`${inputClass} min-h-[60px] resize-none`}
+                      rows={3}
+                      className={`${inputClass} resize-none`}
                     />
                   </TextField>
                 </div>
               </Modal.Body>
+
               <Modal.Footer className="border-t border-white/10">
                 <Button
-                  onPress={onClose}
+                  onPress={closeModal}
                   className="bg-transparent border border-white/15 text-slate-300 hover:bg-white/5 h-9 px-4 rounded-lg"
                 >
                   Cancel
                 </Button>
                 <Button
-                  onPress={
-                    modalType === "create" ? handleCreate : handleUpdate
-                  }
+                  onPress={modalType === "create" ? handleCreate : handleUpdate}
                   isPending={actionLoading}
                   className="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold shadow-lg shadow-cyan-500/20 h-9 px-4 rounded-lg"
                 >
-                  {modalType === "create"
-                    ? "Create Prescription"
-                    : "Update Prescription"}
+                  {actionLoading
+                    ? "Saving..."
+                    : modalType === "create"
+                      ? "Create Prescription"
+                      : "Update Prescription"}
                 </Button>
               </Modal.Footer>
             </Modal.Dialog>
