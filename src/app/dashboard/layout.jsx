@@ -383,12 +383,15 @@ export default function DashboardLayout({ children }) {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/find-doctors"
-              className="hidden sm:inline-flex items-center justify-center h-8 px-3 rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 font-medium text-xs transition-colors"
-            >
-              Find Doctors
-            </Link>
+            {/* Patients only — doctors and admins have no use for this */}
+            {role === "patient" && (
+              <Link
+                href="/find-doctors"
+                className="hidden sm:inline-flex items-center justify-center h-8 px-3 rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 font-medium text-xs transition-colors"
+              >
+                Find Doctors
+              </Link>
+            )}
             {/* Avatar Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button

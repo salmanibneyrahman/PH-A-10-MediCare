@@ -7,6 +7,7 @@ import {
   ListBox,
   Button,
   Chip,
+  Avatar,
   Pagination,
 } from "@heroui/react";
 import { getDoctors } from "@/lib/api";
@@ -380,9 +381,17 @@ export default function FindDoctorsPage() {
                     <tr key={doctor._id}>
                       <td>
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                            {doctor.doctorName?.[0] || "D"}
-                          </div>
+                          <Avatar size="sm" className="shrink-0">
+                            {doctor.profileImage && (
+                              <Avatar.Image
+                                src={doctor.profileImage}
+                                alt={doctor.doctorName || "Doctor"}
+                              />
+                            )}
+                            <Avatar.Fallback className="bg-gradient-to-br from-cyan-500 to-indigo-600 text-white font-bold text-sm">
+                              {doctor.doctorName?.[0]?.toUpperCase() || "D"}
+                            </Avatar.Fallback>
+                          </Avatar>
                           <span className="font-medium text-white">
                             {doctor.doctorName}
                           </span>
