@@ -52,7 +52,7 @@ export default function DoctorDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [user?.email]);
+  }, [user]);
 
   useEffect(() => {
     fetchData();

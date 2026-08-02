@@ -448,7 +448,7 @@ export default function DoctorProfilePage() {
                 {saveLoading
                   ? "Saving..."
                   : isNew
-                    ? "Create Profile"
+                    ? "Update Profile"
                     : "Save Changes"}
               </Button>
             </div>
