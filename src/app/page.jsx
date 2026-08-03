@@ -286,7 +286,7 @@ export default function HomePage() {
                   <span className="gradient-text">Our Priority</span>
                 </h1>
                 <p className="text-slate-400 text-lg sm:text-xl leading-relaxed max-w-xl">
-                  Connect with India&apos;s best doctors, book appointments
+                  Connect with Bangladesh&apos;s best doctors, book appointments
                   instantly, and manage your entire healthcare journey from one
                   powerful platform.
                 </p>
