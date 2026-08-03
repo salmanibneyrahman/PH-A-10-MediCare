@@ -167,7 +167,7 @@ export default function AppNavbar() {
 
                                             {/* Dropdown Menu */}
                                             {isDropdownOpen && (
-                                                <div className="absolute right-0 top-full mt-2 w-56 glass-card border border-white/10 rounded-xl shadow-xl shadow-black/30 py-2 z-50">
+                                                <div className="absolute right-0 top-full mt-2 w-56 bg-[#0d1b2a]/20 backdrop-blur-xl border border-white/15 rounded-xl shadow-2xl shadow-black/60 py-2 z-50">
                                                     {/* Profile Info */}
                                                     <div className="flex flex-col gap-1 py-2 px-4 border-b border-white/5">
                                                         <p className="text-sm font-semibold text-white truncate">

@@ -350,138 +350,63 @@ export default function HomePage() {
                 transition: "all 0.8s ease 0.2s",
               }}
             >
-              <div className="relative w-full max-w-md">
-                {/* Main card */}
-                <div className="glass-card p-8 flex flex-col gap-6 relative z-10">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-                      <svg
-                        className="w-8 h-8 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                        />
+              <div
+                className="hidden lg:flex items-center justify-center relative mt-12 transform translate-y-4"
+                style={{
+                  opacity: heroInView ? 1 : 0,
+                  transform: heroInView ? "translateX(0)" : "translateX(40px)",
+                  transition: "all 0.8s ease 0.2s",
+                }}
+              >
+                <div className="relative w-full max-w-sm flex flex-col gap-6">
+                  <div className="relative w-full h-[450px] drop-shadow-[0_0_35px_rgba(6,182,212,0.15)] flex items-end justify-center rounded-2xl overflow-hidden">
+                    <Image
+                      src="/banner-doctor.png"
+                      alt="Healthcare Professional"
+                      width={320}
+                      height={420}
+                      priority
+                      style={{ height: "auto" }}
+                      className="object-contain object-bottom z-10"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#030712] to-transparent pointer-events-none z-20" />
+                  </div>
+                  <Button
+                    className="w-full bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold shadow-lg shadow-cyan-500/20 py-6 text-base rounded-xl hover:opacity-90 transition-all transform hover:-translate-y-0.5"
+                    onPress={() => router.push("/find-doctors")}
+                  >
+                    Book Appointment Now
+                  </Button>
+                  <div
+                    className="absolute top-6 -right-12 glass-card px-4 py-2 flex items-center gap-2 z-30 bg-[#0d1b2a]/40 backdrop-blur-xl border border-white/15 rounded-xl shadow-xl"
+                    style={{ animation: "float 3s ease-in-out infinite" }}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
                     <div>
-                      <h3 className="text-white font-bold text-lg">
-                        Book Appointment
-                      </h3>
-                      <p className="text-slate-400 text-sm">
-                        Available 24/7 online
-                      </p>
+                      <p className="text-white text-xs font-bold">Verified</p>
+                      <p className="text-slate-400 text-[10px]">500+ Doctors</p>
                     </div>
                   </div>
-
-                  {/* Mock doctor list */}
-                  {[
-                    {
-                      name: "Dr. Sarah Johnson",
-                      spec: "Cardiologist",
-                      time: "10:00 AM",
-                      available: true,
-                    },
-                    {
-                      name: "Dr. Mark Williams",
-                      spec: "Neurologist",
-                      time: "2:30 PM",
-                      available: true,
-                    },
-                    {
-                      name: "Dr. Emily Chen",
-                      spec: "Pediatrician",
-                      time: "4:00 PM",
-                      available: false,
-                    },
-                  ].map((doc) => (
-                    <div
-                      key={doc.name}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-cyan-500/20 transition-all"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/30 to-indigo-600/30 flex items-center justify-center text-white font-bold text-sm">
-                        {doc.name.split(" ")[1][0]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-semibold truncate">
-                          {doc.name}
-                        </p>
-                        <p className="text-slate-500 text-xs">{doc.spec}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-cyan-400 text-xs font-medium">
-                          {doc.time}
-                        </p>
-                        <span
-                          className={`text-xs ${doc.available
-                            ? "text-emerald-400"
-                            : "text-slate-500"
-                            }`}
-                        >
-                          {doc.available ? "Available" : "Booked"}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-
-                  <Button
-                    className="w-full bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold shadow-lg shadow-cyan-500/20"
-                    onPress={() => router.push("/find-doctors")}
+                  <div
+                    className="absolute bottom-28 -left-6 glass-card px-4 py-2 flex items-center gap-2 z-30 bg-[#0d1b2a]/40 backdrop-blur-xl border border-white/15 rounded-xl shadow-xl"
+                    style={{
+                      animation: "float 3s ease-in-out infinite",
+                      animationDelay: "1.5s",
+                    }}
                   >
-                    Book Now
-                  </Button>
-                </div>
-
-                {/* Floating badges */}
-                <div
-                  className="absolute -top-4 -right-4 glass-card px-4 py-2 flex items-center gap-2 z-20"
-                  style={{ animation: "float 3s ease-in-out infinite" }}
-                >
-                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                    <svg
-                      className="w-4 h-4 text-emerald-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-white text-xs font-bold">Verified</p>
-                    <p className="text-slate-400 text-xs">500+ Doctors</p>
-                  </div>
-                </div>
-
-                <div
-                  className="absolute -bottom-4 -left-4 glass-card px-4 py-2 flex items-center gap-2 z-20"
-                  style={{
-                    animation: "float 3s ease-in-out infinite",
-                    animationDelay: "1.5s",
-                  }}
-                >
-                  <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
-                    <svg
-                      className="w-4 h-4 text-amber-400"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-white text-xs font-bold">4.9 Rating</p>
-                    <p className="text-slate-400 text-xs">50K+ Reviews</p>
+                    <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-white text-xs font-bold">4.9 Rating</p>
+                      <p className="text-slate-400 text-[10px]">50K+ Reviews</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -878,7 +803,7 @@ export default function HomePage() {
                         </Avatar>
                         <div className="min-w-0">
                           <p className="text-white font-semibold text-sm truncate">
-                            {review.patientName || "Patient"} 
+                            {review.patientName || "Patient"}
                           </p>
                           <p className="text-slate-500 text-xs truncate">
                             Patient of {review.doctorName || "MediCare Doctor"}

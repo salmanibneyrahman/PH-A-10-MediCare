@@ -16,8 +16,8 @@ function SidebarLink({ href, icon, label, badge }) {
     <Link
       href={href}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative ${isActive
-          ? "bg-gradient-to-r from-cyan-500/20 to-indigo-500/10 text-cyan-400 border border-cyan-500/30 shadow-lg shadow-cyan-500/10"
-          : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
+        ? "bg-gradient-to-r from-cyan-500/20 to-indigo-500/10 text-cyan-400 border border-cyan-500/30 shadow-lg shadow-cyan-500/10"
+        : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
         }`}
     >
       <svg
@@ -415,7 +415,7 @@ export default function DashboardLayout({ children }) {
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 w-56 glass-card border border-white/10 rounded-xl shadow-xl shadow-black/30 py-2 z-50">
+                <div className="absolute right-0 top-full mt-2 w-56 bg-[#0d1b2a]/93 backdrop-blur-2xl border border-white/25 rounded-xl shadow-2xl shadow-black/80 py-2 z-50 ring-1 ring-white/5">
                   {/* Profile Info */}
                   <div className="flex flex-col gap-1 py-2 px-4 border-b border-white/5">
                     <p className="text-sm font-semibold text-white truncate">

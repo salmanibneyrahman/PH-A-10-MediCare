@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Card, TextField, Label, Input } from "@heroui/react";
+import { Card, TextField, Label, Input, Avatar } from "@heroui/react";
 import { getAllAppointments } from "@/lib/api";
 import StatusBadge from "@/components/StatusBadge";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -99,8 +99,8 @@ export default function AdminAppointmentsPage() {
               type="button"
               onClick={() => setActiveFilter(f)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all whitespace-nowrap ${activeFilter === f
-                  ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white"
+                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
                 }`}
             >
               {f === "all"
@@ -148,15 +148,20 @@ export default function AdminAppointmentsPage() {
                     <tr key={apt._id}>
                       <td>
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
-                            {(apt.patient?.name || "P")[0]}
-                          </div>
+                          <Avatar size="sm" className="shrink-0">
+                            {apt.patientPhoto && (
+                              <Avatar.Image src={apt.patientPhoto} alt={apt.patientName} />
+                            )}
+                            <Avatar.Fallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs">
+                              {(apt.patientName || "P")[0]?.toUpperCase()}
+                            </Avatar.Fallback>
+                          </Avatar>
                           <div className="min-w-0">
                             <p className="text-white text-sm font-medium truncate">
-                              {apt.patient?.name || "Unknown"}
+                              {apt.patientName || "Unknown"}
                             </p>
                             <p className="text-slate-500 text-xs truncate">
-                              {apt.patient?.email}
+                              {apt.patientEmail}
                             </p>
                           </div>
                         </div>
@@ -164,10 +169,10 @@ export default function AdminAppointmentsPage() {
                       <td>
                         <div className="min-w-0">
                           <p className="text-white text-sm font-medium truncate">
-                            {apt.doctor?.doctorName || "Unknown"}
+                            {apt.doctorName || "Unknown"}
                           </p>
                           <p className="text-cyan-400 text-xs">
-                            {apt.doctor?.specialization}
+                            {apt.specialization}
                           </p>
                         </div>
                       </td>
