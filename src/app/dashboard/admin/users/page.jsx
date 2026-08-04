@@ -196,53 +196,40 @@ export default function AdminUsersPage() {
               <p className="text-slate-400 font-medium">No users found</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="glass-table">
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Joined</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((u) => (
-                    <tr key={u._id}>
-                      <td>
-                        <div className="flex items-center gap-3">
-                          <Avatar size="sm" className="shrink-0">
-                            <Avatar.Image
-                              src={u.photo || u.image || ""}
-                              alt={u.name || "User"}
-                            />
-                            <Avatar.Fallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs">
-                              {u.name?.[0]?.toUpperCase() || "U"}
-                            </Avatar.Fallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <p className="text-white font-semibold text-sm truncate">
-                              {u.name}
-                            </p>
-                            <p className="text-slate-500 text-xs truncate">
-                              {u.email}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${roleColors[u.role] || roleColors.patient
-                            }`}
-                        >
-                          {u.role || "patient"}
-                        </span>
-                      </td>
-                      <td>
-                        <StatusBadge status={u.status || "active"} />
-                      </td>
-                      <td className="text-slate-400 text-sm">
+            <>
+              {/* Mobile: card list */}
+              <div className="md:hidden divide-y divide-white/5">
+                {filtered.map((u) => (
+                  <div key={u._id} className="p-4 flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar size="sm" className="shrink-0">
+                        <Avatar.Image
+                          src={u.photo || u.image || ""}
+                          alt={u.name || "User"}
+                        />
+                        <Avatar.Fallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs">
+                          {u.name?.[0]?.toUpperCase() || "U"}
+                        </Avatar.Fallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-white font-semibold text-sm truncate">
+                          {u.name}
+                        </p>
+                        <p className="text-slate-500 text-xs truncate">
+                          {u.email}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${roleColors[u.role] || roleColors.patient
+                          }`}
+                      >
+                        {u.role || "patient"}
+                      </span>
+                      <StatusBadge status={u.status || "active"} />
+                      <span className="text-slate-500 text-xs ml-auto">
                         {u.createdAt
                           ? new Date(u.createdAt).toLocaleDateString("en-US", {
                             month: "short",
@@ -250,33 +237,115 @@ export default function AdminUsersPage() {
                             year: "numeric",
                           })
                           : "—"}
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            onPress={() => openModal(u, "suspend")}
-                            className={`text-xs h-8 px-3 rounded-lg bg-transparent border ${u.status === "suspended"
-                                ? "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-                                : "border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        onPress={() => openModal(u, "suspend")}
+                        className={`flex-1 text-xs h-8 rounded-lg bg-transparent border ${u.status === "suspended"
+                            ? "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                            : "border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                          }`}
+                      >
+                        {u.status === "suspended" ? "Activate" : "Suspend"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        onPress={() => openModal(u, "delete")}
+                        className="flex-1 text-xs h-8 rounded-lg bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop: table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="glass-table">
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                      <th>Joined</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((u) => (
+                      <tr key={u._id}>
+                        <td>
+                          <div className="flex items-center gap-3">
+                            <Avatar size="sm" className="shrink-0">
+                              <Avatar.Image
+                                src={u.photo || u.image || ""}
+                                alt={u.name || "User"}
+                              />
+                              <Avatar.Fallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs">
+                                {u.name?.[0]?.toUpperCase() || "U"}
+                              </Avatar.Fallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="text-white font-semibold text-sm truncate">
+                                {u.name}
+                              </p>
+                              <p className="text-slate-500 text-xs truncate">
+                                {u.email}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span
+                            className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${roleColors[u.role] || roleColors.patient
                               }`}
                           >
-                            {u.status === "suspended" ? "Activate" : "Suspend"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            onPress={() => openModal(u, "delete")}
-                            className="text-xs h-8 px-3 rounded-lg bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10"
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                            {u.role || "patient"}
+                          </span>
+                        </td>
+                        <td>
+                          <StatusBadge status={u.status || "active"} />
+                        </td>
+                        <td className="text-slate-400 text-sm">
+                          {u.createdAt
+                            ? new Date(u.createdAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })
+                            : "—"}
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              onPress={() => openModal(u, "suspend")}
+                              className={`text-xs h-8 px-3 rounded-lg bg-transparent border ${u.status === "suspended"
+                                  ? "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                                  : "border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                                }`}
+                            >
+                              {u.status === "suspended" ? "Activate" : "Suspend"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              onPress={() => openModal(u, "delete")}
+                              className="text-xs h-8 px-3 rounded-lg bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10"
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </Card.Content>
       </Card>

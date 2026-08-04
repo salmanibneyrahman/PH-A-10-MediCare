@@ -137,60 +137,99 @@ export default function PatientPaymentsPage() {
               </div>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="glass-table">
-                <thead>
-                  <tr>
-                    <th>Transaction ID</th>
-                    <th>Doctor</th>
-                    <th>Amount</th>
-                    <th>Date</th>
-                    <th>Method</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {payments.map((payment) => (
-                    <tr key={payment._id}>
-                      <td>
-                        <span className="text-slate-400 font-mono text-xs">
-                          {payment.transactionId
-                            ? `${payment.transactionId.slice(0, 22)}...`
-                            : "—"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-slate-200 text-sm font-medium">
+            <>
+              {/* Mobile: card list */}
+              <div className="md:hidden divide-y divide-white/5">
+                {payments.map((payment) => (
+                  <div key={payment._id} className="p-4 flex flex-col gap-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-slate-200 text-sm font-medium truncate">
                           {payment.doctorName || payment.doctorId || "—"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-emerald-400 font-bold text-sm">
-                          ${payment.amount}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-slate-400 text-sm">
+                        </p>
+                        <p className="text-slate-500 text-xs">
                           {payment.paymentDate
-                            ? new Date(
+                            ? new Date(payment.paymentDate).toLocaleDateString(
+                              "en-US",
+                              { year: "numeric", month: "short", day: "numeric" }
+                            )
+                            : "—"}
+                        </p>
+                      </div>
+                      <span className="text-emerald-400 font-bold text-base shrink-0">
+                        ${payment.amount}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-slate-400 font-mono text-[11px] truncate">
+                        {payment.transactionId
+                          ? `${payment.transactionId.slice(0, 20)}...`
+                          : "—"}
+                      </span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 capitalize shrink-0">
+                        {payment.paymentMethod || "stripe"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop: table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="glass-table">
+                  <thead>
+                    <tr>
+                      <th>Transaction ID</th>
+                      <th>Doctor</th>
+                      <th>Amount</th>
+                      <th>Date</th>
+                      <th>Method</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payments.map((payment) => (
+                      <tr key={payment._id}>
+                        <td>
+                          <span className="text-slate-400 font-mono text-xs">
+                            {payment.transactionId
+                              ? `${payment.transactionId.slice(0, 22)}...`
+                              : "—"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-slate-200 text-sm font-medium">
+                            {payment.doctorName || payment.doctorId || "—"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-emerald-400 font-bold text-sm">
+                            ${payment.amount}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-slate-400 text-sm">
+                            {payment.paymentDate
+                              ? new Date(
                                 payment.paymentDate
                               ).toLocaleDateString("en-US", {
                                 year: "numeric",
                                 month: "short",
                                 day: "numeric",
                               })
-                            : "—"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 capitalize">
-                          {payment.paymentMethod || "stripe"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                              : "—"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 capitalize">
+                            {payment.paymentMethod || "stripe"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </Card.Content>
       </Card>

@@ -361,9 +361,75 @@ export default function FindDoctorsPage() {
             ))}
           </div>
         ) : (
-          /* Table View */
+          /* Table View — stacked cards on mobile, real table from md up */
           <div className="glass-card border border-white/10 overflow-hidden">
-            <div className="overflow-x-auto">
+            {/* Mobile: card list */}
+            <div className="md:hidden divide-y divide-white/5">
+              {doctors.map((doctor) => (
+                <div key={doctor._id} className="p-4 flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar size="sm" className="shrink-0">
+                      {doctor.profileImage && (
+                        <Avatar.Image
+                          src={doctor.profileImage}
+                          alt={doctor.doctorName || "Doctor"}
+                        />
+                      )}
+                      <Avatar.Fallback className="bg-gradient-to-br from-cyan-500 to-indigo-600 text-white font-bold text-sm">
+                        {doctor.doctorName?.[0]?.toUpperCase() || "D"}
+                      </Avatar.Fallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-white truncate">
+                        {doctor.doctorName}
+                      </p>
+                      <p className="text-cyan-400 text-xs truncate">
+                        {doctor.specialization}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <svg className="w-3.5 h-3.5 text-amber-400 fill-amber-400" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                      <span className="text-slate-300 text-xs">
+                        {doctor.averageRating?.toFixed(1) || "0.0"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 rounded-lg bg-white/5">
+                      <p className="text-slate-500">Experience</p>
+                      <p className="text-slate-200 font-semibold">
+                        {doctor.experience} yrs
+                      </p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white/5">
+                      <p className="text-slate-500">Fee</p>
+                      <p className="text-emerald-400 font-semibold">
+                        ${doctor.consultationFee}
+                      </p>
+                    </div>
+                  </div>
+
+                  {doctor.hospitalName && (
+                    <p className="text-slate-400 text-xs truncate">
+                      {doctor.hospitalName}
+                    </p>
+                  )}
+
+                  <a
+                    href={`/find-doctors/${doctor._id}`}
+                    className="inline-flex items-center justify-center h-9 rounded-lg bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-semibold text-sm hover:opacity-90 transition-opacity"
+                  >
+                    Book
+                  </a>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="glass-table">
                 <thead>
                   <tr>

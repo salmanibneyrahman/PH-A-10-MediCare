@@ -432,7 +432,7 @@ export default function DashboardLayout({ children }) {
                   </div>
 
                   {/* My Profile */}
-                  <Link
+                  {dbUser?.role !== "admin" && (<Link
                     href={`/dashboard/${role}/profile`}
                     onClick={() => setIsDropdownOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 transition-all"
@@ -451,7 +451,7 @@ export default function DashboardLayout({ children }) {
                       />
                     </svg>
                     My Profile
-                  </Link>
+                  </Link>)}
 
                   {/* Back to Home */}
                   <Link
