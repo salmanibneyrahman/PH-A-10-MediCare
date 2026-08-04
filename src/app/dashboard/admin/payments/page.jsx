@@ -37,8 +37,12 @@ export default function AdminPaymentsPage() {
     setFiltered(
       payments.filter(
         (p) =>
-          p.patient?.name?.toLowerCase().includes(q) ||
-          p.doctor?.doctorName?.toLowerCase().includes(q) ||
+          // These are flat fields on the payment document — there is no
+          // nested `patient` / `doctor` object, so the old p.patient?.name
+          // never matched and search silently returned nothing.
+          p.patientName?.toLowerCase().includes(q) ||
+          p.patientEmail?.toLowerCase().includes(q) ||
+          p.doctorName?.toLowerCase().includes(q) ||
           p.transactionId?.toLowerCase().includes(q)
       )
     );
@@ -53,14 +57,16 @@ export default function AdminPaymentsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-black text-white">Payment Management</h1>
-        <p className="text-slate-400 text-sm mt-1">
+        <h1 className="text-xl sm:text-2xl font-black text-white">
+          Payment Management
+        </h1>
+        <p className="text-slate-400 text-xs sm:text-sm mt-1">
           Track all financial transactions on the platform
         </p>
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
         {[
           {
             label: "Total Revenue",
@@ -78,19 +84,22 @@ export default function AdminPaymentsPage() {
           },
           {
             label: "Average Transaction",
-            value: payments.length > 0 ? `$${Math.round(totalRevenue / payments.length)}` : "$0",
+            value:
+              payments.length > 0
+                ? `$${Math.round(totalRevenue / payments.length)}`
+                : "$0",
             color: "from-indigo-500 to-purple-600",
             text: "text-indigo-400",
             icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
           },
         ].map((card) => (
           <Card key={card.label} className="glass-card border border-white/10">
-            <Card.Content className="p-5 flex flex-col gap-3">
+            <Card.Content className="p-4 sm:p-5 flex flex-col gap-3">
               <div
-                className={`w-11 h-11 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center shadow-lg`}
+                className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center shadow-lg`}
               >
                 <svg
-                  className="w-5 h-5 text-white"
+                  className="w-4 h-4 sm:w-5 sm:h-5 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -104,10 +113,12 @@ export default function AdminPaymentsPage() {
                 </svg>
               </div>
               <div>
-                <p className={`text-2xl font-black ${card.text}`}>
+                <p className={`text-xl sm:text-2xl font-black ${card.text}`}>
                   {card.value}
                 </p>
-                <p className="text-slate-400 text-sm">{card.label}</p>
+                <p className="text-slate-400 text-xs sm:text-sm">
+                  {card.label}
+                </p>
               </div>
             </Card.Content>
           </Card>
@@ -147,7 +158,7 @@ export default function AdminPaymentsPage() {
       <Card className="glass-card border border-white/10">
         <Card.Content className="p-0">
           {filtered.length === 0 ? (
-            <div className="flex flex-col items-center gap-4 py-16 text-center">
+            <div className="flex flex-col items-center gap-4 py-16 text-center px-4">
               <svg
                 className="w-16 h-16 text-slate-700"
                 fill="none"
@@ -161,64 +172,121 @@ export default function AdminPaymentsPage() {
                   d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
                 />
               </svg>
-              <p className="text-slate-400 font-medium">No payment records found</p>
+              <p className="text-slate-400 font-medium">
+                No payment records found
+              </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="glass-table">
-                <thead>
-                  <tr>
-                    <th>Transaction ID</th>
-                    <th>Patient</th>
-                    <th>Doctor</th>
-                    <th>Amount</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((payment) => (
-                    <tr key={payment._id}>
-                      <td>
-                        <span className="text-slate-400 font-mono text-xs">
-                          {payment.transactionId
-                            ? payment.transactionId.slice(0, 24) + "..."
-                            : "—"}
-                        </span>
-                      </td>
-                      <td>
-                        <p className="text-white text-sm font-medium">
+            <>
+              {/* Mobile: card list */}
+              <div className="md:hidden divide-y divide-white/5">
+                {filtered.map((payment) => (
+                  <div key={payment._id} className="p-4 flex flex-col gap-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-white text-sm font-semibold truncate">
                           {payment.patientName || "Unknown"}
                         </p>
-                        <p className="text-slate-500 text-xs">
+                        <p className="text-slate-500 text-xs truncate">
                           {payment.patientEmail}
                         </p>
-                      </td>
-                      <td>
-                        <p className="text-white text-sm font-medium">
+                      </div>
+                      <span className="text-emerald-400 font-bold text-base shrink-0">
+                        ${payment.amount}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 text-xs">
+                      <div className="min-w-0">
+                        <p className="text-slate-500">Doctor</p>
+                        <p className="text-white font-medium truncate">
                           {payment.doctorName || "Unknown"}
                         </p>
-                        <p className="text-cyan-400 text-xs">
-                          {payment.specialization}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-slate-500">Date</p>
+                        <p className="text-slate-300">
+                          {payment.paymentDate
+                            ? new Date(payment.paymentDate).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              }
+                            )
+                            : "—"}
                         </p>
-                      </td>
-                      <td>
-                        <span className="text-emerald-400 font-bold text-sm">
-                          ${payment.amount}
-                        </span>
-                      </td>
-                      <td className="text-slate-400 text-sm">
-                        {payment.paymentDate
-                          ? new Date(payment.paymentDate).toLocaleDateString(
-                            "en-US",
-                            { month: "short", day: "numeric", year: "numeric" }
-                          )
-                          : "—"}
-                      </td>
+                      </div>
+                    </div>
+
+                    <p className="text-slate-500 font-mono text-[11px] truncate">
+                      {payment.transactionId
+                        ? payment.transactionId.slice(0, 28) + "..."
+                        : "—"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop: table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="glass-table w-full min-w-[720px]">
+                  <thead>
+                    <tr>
+                      <th>Transaction ID</th>
+                      <th>Patient</th>
+                      <th>Doctor</th>
+                      <th>Amount</th>
+                      <th>Date</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filtered.map((payment) => (
+                      <tr key={payment._id}>
+                        <td>
+                          <span className="text-slate-400 font-mono text-xs">
+                            {payment.transactionId
+                              ? payment.transactionId.slice(0, 24) + "..."
+                              : "—"}
+                          </span>
+                        </td>
+                        <td>
+                          <p className="text-white text-sm font-medium">
+                            {payment.patientName || "Unknown"}
+                          </p>
+                          <p className="text-slate-500 text-xs">
+                            {payment.patientEmail}
+                          </p>
+                        </td>
+                        <td>
+                          <p className="text-white text-sm font-medium">
+                            {payment.doctorName || "Unknown"}
+                          </p>
+                        </td>
+                        <td>
+                          <span className="text-emerald-400 font-bold text-sm">
+                            ${payment.amount}
+                          </span>
+                        </td>
+                        <td className="text-slate-400 text-sm">
+                          {payment.paymentDate
+                            ? new Date(payment.paymentDate).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              }
+                            )
+                            : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </Card.Content>
       </Card>
