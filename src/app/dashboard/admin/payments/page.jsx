@@ -187,18 +187,18 @@ export default function AdminPaymentsPage() {
                       </td>
                       <td>
                         <p className="text-white text-sm font-medium">
-                          {payment.patient?.name || "Unknown"}
+                          {payment.patientName || "Unknown"}
                         </p>
                         <p className="text-slate-500 text-xs">
-                          {payment.patient?.email}
+                          {payment.patientEmail}
                         </p>
                       </td>
                       <td>
                         <p className="text-white text-sm font-medium">
-                          {payment.doctor?.doctorName || "Unknown"}
+                          {payment.doctorName || "Unknown"}
                         </p>
                         <p className="text-cyan-400 text-xs">
-                          {payment.doctor?.specialization}
+                          {payment.specialization}
                         </p>
                       </td>
                       <td>
